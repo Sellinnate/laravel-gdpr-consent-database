@@ -119,6 +119,79 @@ if ($user->hasAllRequiredConsents()) {
     // Get missing required consents
     $missingConsents = $user->getMissingRequiredConsents();
 }
+
+### Consent Versioning
+
+#### Overview
+
+The package supports versioning of consent types, which is essential for GDPR compliance when terms or policies change.
+
+#### Usage
+
+```php
+// Create a consent type with version
+$consentType = ConsentType::create([
+    'name' => 'Privacy Policy',
+    'slug' => 'privacy-policy',
+    'description' => 'Privacy Policy consent',
+    'required' => true,
+    'active' => true,
+    'version' => '1.0',
+]);
+
+// Create a new version when terms change
+$newVersion = $consentType->createNewVersion([
+    'description' => 'Updated Privacy Policy consent',
+]);
+
+// Check if a user's consent is for the current version
+if ($user->hasConsent('privacy-policy', true)) {
+    // User has consented to the current version
+} else {
+    // User needs to renew consent for the new version
+}
+
+// Get all consents that need renewal (expired or outdated version)
+$consentsNeedingRenewal = $user->consentsNeedingRenewal();
+
+// Renew a consent with the latest version
+$user->renewConsent('privacy-policy');
+```
+
+### Consent Expiration
+
+#### Overview
+
+The package also supports consent expiration, allowing you to set validity periods for consents.
+
+#### Usage
+
+```php
+// Create a consent type with a validity period (in months)
+ConsentType::create([
+    'name' => 'Marketing Emails',
+    'slug' => 'marketing-emails',
+    'description' => 'Consent to receive marketing emails',
+    'required' => false,
+    'active' => true,
+    'version' => '1.0',
+    'validity_months' => 12, // Consent valid for 12 months
+]);
+
+// Give consent with a custom validity period
+$user->giveConsent('marketing-emails', [], 6); // Valid for 6 months
+
+// Check if a consent is expired
+$consent = $user->consents()->where('consent_type_id', $consentTypeId)->first();
+if ($consent->isExpired()) {
+    // Consent is expired
+}
+
+// Get all expired consents
+$expiredConsents = $user->expiredConsents();
+
+// Get consents that are about to expire within the next 30 days
+$soonExpiringConsents = $user->getConsentsExpiringWithinDays(30);
 ```
 
 ## Database Structure
