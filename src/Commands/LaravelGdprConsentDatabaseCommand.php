@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Selli\LaravelGdprConsentDatabase\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class LaravelGdprConsentDatabaseCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-gdpr-consent-database';
 
     public $description = 'My command';
 

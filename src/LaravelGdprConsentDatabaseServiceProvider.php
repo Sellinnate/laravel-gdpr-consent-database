@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton;
+namespace Selli\LaravelGdprConsentDatabase;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use VendorName\Skeleton\Commands\SkeletonCommand;
+use Selli\LaravelGdprConsentDatabase\Commands\LaravelGdprConsentDatabaseCommand;
 
-class SkeletonServiceProvider extends PackageServiceProvider
+class LaravelGdprConsentDatabaseServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
@@ -16,10 +16,10 @@ class SkeletonServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package
-            ->name('skeleton')
+            ->name('laravel-gdpr-consent-database')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigration('create_migration_table_name_table')
-            ->hasCommand(SkeletonCommand::class);
+            ->hasMigration('create_laravel_gdpr_consent_database_table')
+            ->hasCommand(LaravelGdprConsentDatabaseCommand::class);
     }
 }

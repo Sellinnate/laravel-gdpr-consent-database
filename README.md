@@ -1,48 +1,31 @@
-# :package_description
+# Laravel GDPR Consent Database
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-<!--delete-->
----
-This repo can be used to scaffold a Laravel package. Follow these steps to get started:
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/selli/laravel-gdpr-consent-database.svg?style=flat-square)](https://packagist.org/packages/selli/laravel-gdpr-consent-database)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/selli/laravel-gdpr-consent-database/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/selli/laravel-gdpr-consent-database/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/selli/laravel-gdpr-consent-database/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/selli/laravel-gdpr-consent-database/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/selli/laravel-gdpr-consent-database.svg?style=flat-square)](https://packagist.org/packages/selli/laravel-gdpr-consent-database)
 
-1. Press the "Use this template" button at the top of this repo to create a new repo with the contents of this skeleton.
-2. Run "php ./configure.php" to run a script that will replace all placeholders throughout all the files.
-3. Have fun creating your package.
-4. If you need help creating a package, consider picking up our <a href="https://laravelpackage.training">Laravel Package Training</a> video course.
----
-<!--/delete-->
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
-
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/:package_name.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/:package_name)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+A comprehensive Laravel package for managing GDPR consent in your applications. This package provides a complete solution for tracking user consents, managing consent types, and ensuring GDPR compliance.
 
 ## Installation
 
 You can install the package via composer:
 
 ```bash
-composer require :vendor_slug/:package_slug
+composer require selli/laravel-gdpr-consent-database
 ```
 
 You can publish and run the migrations with:
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-migrations"
+php artisan vendor:publish --tag="laravel-gdpr-consent-database-migrations"
 php artisan migrate
 ```
 
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-config"
+php artisan vendor:publish --tag="laravel-gdpr-consent-database-config"
 ```
 
 This is the contents of the published config file:
@@ -55,14 +38,163 @@ return [
 Optionally, you can publish the views using
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-views"
+php artisan vendor:publish --tag="laravel-gdpr-consent-database-views"
 ```
 
 ## Usage
 
+### Setup
+
+After installing the package and running the migrations, you need to add the `HasGdprConsents` trait to your User model or any other model that needs to manage GDPR consents:
+
 ```php
-$variable = new VendorName\Skeleton();
-echo $variable->echoPhrase('Hello, VendorName!');
+use Selli\LaravelGdprConsentDatabase\Traits\HasGdprConsents;
+
+class User extends Authenticatable
+{
+    use HasGdprConsents;
+    
+    // ... rest of your model
+}
+```
+
+### Creating Consent Types
+
+First, you need to create consent types that users can agree to:
+
+```php
+use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+
+// Create a required consent type (e.g., Terms and Conditions)
+ConsentType::create([
+    'name' => 'Terms and Conditions',
+    'slug' => 'terms',
+    'description' => 'Agreement to the website terms and conditions',
+    'required' => true,
+    'active' => true,
+]);
+
+// Create an optional consent type (e.g., Marketing Emails)
+ConsentType::create([
+    'name' => 'Marketing Emails',
+    'slug' => 'marketing-emails',
+    'description' => 'Consent to receive marketing emails',
+    'required' => false,
+    'active' => true,
+]);
+```
+
+### Managing User Consents
+
+Once you have set up consent types, you can manage user consents:
+
+```php
+// Get the authenticated user
+$user = auth()->user();
+
+// Check if the user has given a specific consent
+if ($user->hasConsent('marketing-emails')) {
+    // User has consented to marketing emails
+}
+
+// Give consent (can use slug or consent type ID)
+$user->giveConsent('marketing-emails');
+
+// Give consent with additional metadata
+$user->giveConsent('marketing-emails', [
+    'source' => 'registration_form',
+    'version' => '1.0',
+]);
+
+// Revoke consent
+$user->revokeConsent('marketing-emails');
+
+// Get all active consents for the user
+$activeConsents = $user->activeConsents();
+
+// Check if the user has all required consents
+if ($user->hasAllRequiredConsents()) {
+    // User has all required consents
+} else {
+    // Get missing required consents
+    $missingConsents = $user->getMissingRequiredConsents();
+}
+```
+
+## Database Structure
+
+This package creates two main tables:
+
+### consent_types
+
+Stores the different types of consent that can be requested from users:
+
+- `id`: Primary key
+- `name`: Name of the consent type
+- `slug`: Unique slug for easy reference
+- `description`: Detailed description of what the user is consenting to
+- `required`: Boolean indicating if this consent is required
+- `active`: Boolean indicating if this consent type is currently active
+- `metadata`: JSON field for additional data (e.g., legal references, version)
+- `timestamps`: Created and updated timestamps
+
+### user_consents
+
+Stores the actual user consents:
+
+- `id`: Primary key
+- `consentable_id` and `consentable_type`: Polymorphic relationship to the user model
+- `consent_type_id`: Foreign key to the consent type
+- `granted`: Boolean indicating if consent is currently granted
+- `granted_at`: Timestamp when consent was granted
+- `revoked_at`: Timestamp when consent was revoked (if applicable)
+- `ip_address`: IP address from which consent was given
+- `user_agent`: User agent from which consent was given
+- `metadata`: JSON field for additional data
+- `timestamps`: Created and updated timestamps
+
+## Extending the Package
+
+### Custom Consent Types
+
+You can extend the `ConsentType` model to add custom functionality:
+
+```php
+use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+
+class MyConsentType extends ConsentType
+{
+    // Add custom methods or override existing ones
+    
+    public function isLegallyRequired()
+    {
+        return $this->required && isset($this->metadata['legal_basis']);
+    }
+}
+```
+
+### Custom Consent Workflows
+
+You can create custom consent workflows by extending the `HasGdprConsents` trait or by creating service classes that use the provided models:
+
+```php
+use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+
+class ConsentService
+{
+    public function processRegistrationConsents(User $user, array $consentData)
+    {
+        // Process multiple consents at once
+        foreach ($consentData as $slug => $isGranted) {
+            if ($isGranted) {
+                $user->giveConsent($slug, ['source' => 'registration']);
+            }
+        }
+        
+        // Check if all required consents are given
+        return $user->hasAllRequiredConsents();
+    }
+}
 ```
 
 ## Testing
@@ -85,7 +217,7 @@ Please review [our security policy](../../security/policy) on how to report secu
 
 ## Credits
 
-- [:author_name](https://github.com/:author_username)
+- [Filippo Calabrese](https://github.com/filippocalabrese)
 - [All Contributors](../../contributors)
 
 ## License
