@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('user_agent')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
-            
+
             // Indice composito per ottimizzare le query
             $table->index(['consentable_type', 'consentable_id', 'consent_type_id']);
         });

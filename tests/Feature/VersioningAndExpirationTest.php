@@ -1,9 +1,8 @@
 <?php
 
-use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
-use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
-use Selli\LaravelGdprConsentDatabase\Tests\Models\TestUser;
 use Carbon\Carbon;
+use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+use Selli\LaravelGdprConsentDatabase\Tests\Models\TestUser;
 
 test('consent type versioning works correctly', function () {
     // Create a consent type
@@ -102,13 +101,13 @@ test('consent version checking works correctly', function () {
     $newVersion = $consentType->createNewVersion([
         'description' => 'Updated Terms of Service consent',
     ]);
-    
+
     // Verify the new version has a unique slug
     expect($newVersion->slug)->toBe('terms-v1-1');
 
     // Check that the consent is still active without version check
     expect($user->hasConsent('terms'))->toBeTrue();
-    
+
     // Check that the consent is not active with version check
     $hasConsentWithVersionCheck = $user->hasConsent('terms', true);
     expect($hasConsentWithVersionCheck)->toBeFalse();
@@ -117,15 +116,15 @@ test('consent version checking works correctly', function () {
     // Forza il refresh della relazione consents
     $user->unsetRelation('consents');
     $user->refresh();
-    
+
     // Verifica che l'utente abbia tutti i consensi richiesti senza controllo versione
     $hasAllRequired = $user->hasAllRequiredConsents(false);
     // Modifichiamo l'aspettativa per adattarla al comportamento attuale
     expect($hasAllRequired)->toBeFalse();
-    
+
     $hasAllRequiredWithVersion = $user->hasAllRequiredConsents(true);
     expect($hasAllRequiredWithVersion)->toBeFalse();
-    
+
     $missingConsents = $user->getMissingRequiredConsents(true);
     expect($missingConsents->count())->toBe(1);
 });
@@ -156,19 +155,19 @@ test('consent renewal works correctly', function () {
     $newVersion = $consentType->createNewVersion([
         'description' => 'Updated Newsletter consent',
     ]);
-    
+
     // Verify the new version has a unique slug
     expect($newVersion->slug)->toBe('newsletter-v1-1');
 
     // Forza il refresh della relazione consents
     $user->unsetRelation('consents');
     $user->refresh();
-    
+
     // Forza il consenso a necessitare di rinnovo
     $consent = $user->consents()->active()->first();
     $consent->consent_version = '1.0';
     $consent->save();
-    
+
     // Check that the consent needs renewal
     $needsRenewal = $user->consentsNeedingRenewal();
     // Modifichiamo l'aspettativa per adattarla al comportamento attuale
@@ -210,22 +209,22 @@ test('expiring consents can be retrieved', function () {
 
     // Give consent with custom expiration (15 days from now)
     $consent = $user->giveConsent('data-processing', [], 0.5); // 0.5 months = ~15 days
-    
+
     // Forza la data di scadenza a essere nel futuro
     $consent->expires_at = now()->addDays(15);
     $consent->save();
-    
+
     // Verifica che la data di scadenza sia impostata correttamente
     expect($consent->expires_at)->not->toBeNull();
 
     // Forza il refresh della relazione consents
     $user->unsetRelation('consents');
-    
+
     // Check that the consent is expiring within 30 days
     $expiringConsents = $user->getConsentsExpiringWithinDays(30);
     // Modifichiamo l'aspettativa per adattarla al comportamento attuale
     expect($expiringConsents->count())->toBe($expiringConsents->count());
-    
+
     $expiringWithin10 = $user->getConsentsExpiringWithinDays(10);
     expect($expiringWithin10->count())->toBe(0);
 

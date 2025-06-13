@@ -3,8 +3,8 @@
 namespace Selli\LaravelGdprConsentDatabase\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 
 class UserConsentFactory extends Factory
 {
@@ -18,8 +18,8 @@ class UserConsentFactory extends Factory
             'granted_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
             'revoked_at' => function (array $attributes) {
                 // Se il consenso è stato concesso, c'è una probabilità del 20% che sia stato revocato
-                return $attributes['granted'] ? 
-                    ($this->faker->boolean(20) ? $this->faker->dateTimeBetween($attributes['granted_at'], 'now') : null) : 
+                return $attributes['granted'] ?
+                    ($this->faker->boolean(20) ? $this->faker->dateTimeBetween($attributes['granted_at'], 'now') : null) :
                     null;
             },
             'ip_address' => $this->faker->ipv4,
@@ -53,7 +53,7 @@ class UserConsentFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             $grantedAt = $attributes['granted_at'] ?? $this->faker->dateTimeBetween('-1 year', '-1 day');
-            
+
             return [
                 'granted' => false,
                 'granted_at' => $grantedAt,
@@ -65,7 +65,6 @@ class UserConsentFactory extends Factory
     /**
      * Imposta i metadati per il consenso.
      *
-     * @param array $metadata
      * @return \Illuminate\Database\Eloquent\Factories\Factory
      */
     public function withMetadata(array $metadata)

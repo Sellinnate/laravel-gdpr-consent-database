@@ -2,15 +2,15 @@
 
 namespace Selli\LaravelGdprConsentDatabase\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 
 class UserConsent extends Model
 {
     use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -43,8 +43,6 @@ class UserConsent extends Model
 
     /**
      * Get the consent type that owns the user consent.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function consentType(): BelongsTo
     {
@@ -53,8 +51,6 @@ class UserConsent extends Model
 
     /**
      * Get the parent consentable model.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
     public function consentable(): MorphTo
     {
@@ -73,7 +69,7 @@ class UserConsent extends Model
             ->whereNull('revoked_at')
             ->where(function ($query) {
                 $query->whereNull('expires_at')
-                      ->orWhere('expires_at', '>', now());
+                    ->orWhere('expires_at', '>', now());
             });
     }
 
@@ -87,7 +83,7 @@ class UserConsent extends Model
     {
         return $query->whereNotNull('revoked_at');
     }
-    
+
     /**
      * Scope a query to only include expired consents.
      *
@@ -100,62 +96,54 @@ class UserConsent extends Model
             ->where('expires_at', '<=', now())
             ->whereNull('revoked_at');
     }
-    
+
     /**
      * Check if the consent is expired.
-     *
-     * @return bool
      */
     public function isExpired(): bool
     {
         return $this->expires_at && now()->gt($this->expires_at);
     }
-    
+
     /**
      * Check if the consent is for the current version of the consent type.
-     *
-     * @return bool
      */
     public function isCurrentVersion(): bool
     {
         // Carica la relazione se non è già caricata
-        if (!$this->relationLoaded('consentType')) {
+        if (! $this->relationLoaded('consentType')) {
             $this->load('consentType');
         }
-        
+
         // Trova la versione attiva corrente del tipo di consenso
-        $currentVersion = ConsentType::where('slug', 'like', $this->consentType->slug . '%')
+        $currentVersion = ConsentType::where('slug', 'like', $this->consentType->slug.'%')
             ->where('active', true)
             ->first();
-            
-        if (!$currentVersion) {
+
+        if (! $currentVersion) {
             return false;
         }
-        
+
         return $this->consent_version === $currentVersion->version;
     }
-    
+
     /**
      * Check if the consent needs renewal due to version change.
-     *
-     * @return bool
      */
     public function needsRenewal(): bool
     {
-        return $this->isExpired() || !$this->isCurrentVersion();
+        return $this->isExpired() || ! $this->isCurrentVersion();
     }
-    
+
     /**
      * Get days until expiration.
-     *
-     * @return int|null
      */
     public function daysUntilExpiration(): ?int
     {
-        if (!$this->expires_at) {
+        if (! $this->expires_at) {
             return null;
         }
-        
+
         return max(0, now()->diffInDays($this->expires_at, false));
     }
 }
