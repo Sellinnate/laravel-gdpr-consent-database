@@ -2,14 +2,14 @@
 
 namespace Selli\LaravelGdprConsentDatabase\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 
 class ConsentType extends Model
 {
     use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -37,8 +37,6 @@ class ConsentType extends Model
 
     /**
      * Get the user consents for this consent type.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function userConsents(): HasMany
     {

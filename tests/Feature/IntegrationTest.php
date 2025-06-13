@@ -1,7 +1,6 @@
 <?php
 
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
-use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 use Selli\LaravelGdprConsentDatabase\Tests\Models\TestUser;
 
 test('flusso completo di gestione del consenso', function () {
@@ -84,7 +83,7 @@ test('flusso completo di gestione del consenso', function () {
     $revokedConsent = $user->consents()
         ->where('consent_type_id', $marketingConsent->id)
         ->first();
-    
+
     expect($revokedConsent->granted)->toBeFalse();
     expect($revokedConsent->revoked_at)->not->toBeNull();
 

@@ -29,15 +29,15 @@ class TestCase extends Orchestra
         config()->set('database.default', 'testing');
 
         // Include package migrations
-        $migrationPath = __DIR__ . '/../database/migrations/';
+        $migrationPath = __DIR__.'/../database/migrations/';
         if (file_exists($migrationPath)) {
             foreach (\Illuminate\Support\Facades\File::files($migrationPath) as $migration) {
                 (include $migration->getRealPath())->up();
             }
         }
-        
+
         // Include test migrations
-        foreach (\Illuminate\Support\Facades\File::files(__DIR__ . '/database/migrations') as $migration) {
+        foreach (\Illuminate\Support\Facades\File::files(__DIR__.'/database/migrations') as $migration) {
             (include $migration->getRealPath())->up();
         }
     }

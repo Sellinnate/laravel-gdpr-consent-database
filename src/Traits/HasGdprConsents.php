@@ -3,15 +3,13 @@
 namespace Selli\LaravelGdprConsentDatabase\Traits;
 
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 
 trait HasGdprConsents
 {
     /**
      * Get all consents for this model.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
      */
     public function consents(): MorphMany
     {
@@ -38,7 +36,7 @@ trait HasGdprConsents
     {
         if (is_string($consentTypeId)) {
             $consentType = ConsentType::where('slug', $consentTypeId)->first();
-            if (!$consentType) {
+            if (! $consentType) {
                 return false;
             }
             $consentTypeId = $consentType->id;
@@ -54,7 +52,6 @@ trait HasGdprConsents
      * Give consent for a specific type.
      *
      * @param  string|int  $consentTypeId
-     * @param  array  $metadata
      * @return \Selli\LaravelGdprConsentDatabase\Models\UserConsent
      */
     public function giveConsent($consentTypeId, array $metadata = [])
@@ -110,15 +107,15 @@ trait HasGdprConsents
         $requiredConsentTypes = ConsentType::where('required', true)
             ->where('active', true)
             ->get();
-        
+
         $missingConsents = collect();
-        
+
         foreach ($requiredConsentTypes as $consentType) {
-            if (!$this->hasConsent($consentType->id)) {
+            if (! $this->hasConsent($consentType->id)) {
                 $missingConsents->push($consentType);
             }
         }
-        
+
         return $missingConsents;
     }
 

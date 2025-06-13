@@ -2,9 +2,9 @@
 
 namespace Selli\LaravelGdprConsentDatabase;
 
+use Selli\LaravelGdprConsentDatabase\Commands\LaravelGdprConsentDatabaseCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Selli\LaravelGdprConsentDatabase\Commands\LaravelGdprConsentDatabaseCommand;
 
 class LaravelGdprConsentDatabaseServiceProvider extends PackageServiceProvider
 {

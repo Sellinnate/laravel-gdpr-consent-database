@@ -2,14 +2,15 @@
 
 namespace Selli\LaravelGdprConsentDatabase\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class UserConsent extends Model
 {
     use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -39,8 +40,6 @@ class UserConsent extends Model
 
     /**
      * Get the consent type that owns the user consent.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function consentType(): BelongsTo
     {
@@ -49,8 +48,6 @@ class UserConsent extends Model
 
     /**
      * Get the parent consentable model.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
     public function consentable(): MorphTo
     {
