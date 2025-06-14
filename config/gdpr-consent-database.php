@@ -14,7 +14,7 @@ return [
         'details_header' => 'Cookie Categories',
         'required_text' => '(Required)',
     ],
-    
+
     'colors' => [
         'banner_background' => '#fff',
         'banner_border' => '#ddd',
@@ -27,7 +27,7 @@ return [
         'button_secondary_hover' => '#e1e1e1',
         'details_border' => '#eee',
     ],
-    
+
     'icon' => [
         'position' => 'right',
         'display' => 'icon-with-text',
