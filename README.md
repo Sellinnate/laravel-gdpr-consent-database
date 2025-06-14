@@ -1,8 +1,8 @@
 # Laravel GDPR Consent Database
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/selli/laravel-gdpr-consent-database.svg?style=flat-square)](https://packagist.org/packages/selli/laravel-gdpr-consent-database)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/selli/laravel-gdpr-consent-database/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/selli/laravel-gdpr-consent-database/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/selli/laravel-gdpr-consent-database/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/selli/laravel-gdpr-consent-database/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/sellinnate/laravel-gdpr-consent-database/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/sellinnate/laravel-gdpr-consent-database/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/sellinnate/laravel-gdpr-consent-database/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/sellinnate/laravel-gdpr-consent-database/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/selli/laravel-gdpr-consent-database.svg?style=flat-square)](https://packagist.org/packages/selli/laravel-gdpr-consent-database)
 
 A comprehensive Laravel package for managing GDPR consent in your applications. This package provides a complete solution for tracking user consents, managing consent types, and ensuring GDPR compliance.
