@@ -43,13 +43,45 @@ This is the contents of the published config file:
 
 ```php
 return [
+    'text' => [
+        'title' => 'Cookie Consent',
+        'message' => 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.',
+        'accept_text' => 'Accept All',
+        'reject_text' => 'Reject All',
+        'details_text' => 'Cookie Details',
+        'back_text' => 'Back',
+        'save_text' => 'Save Preferences',
+        'icon_text' => 'Cookie Settings',
+        'details_header' => 'Cookie Categories',
+        'required_text' => '(Required)',
+    ],
+
+    'colors' => [
+        'banner_background' => '#fff',
+        'banner_border' => '#ddd',
+        'banner_shadow' => 'rgba(0,0,0,0.1)',
+        'text_primary' => '#333',
+        'text_secondary' => '#666',
+        'button_primary_bg' => '#007cba',
+        'button_primary_hover' => '#005a87',
+        'button_secondary_bg' => '#f1f1f1',
+        'button_secondary_hover' => '#e1e1e1',
+        'details_border' => '#eee',
+    ],
+
+    'icon' => [
+        'position' => 'right',
+        'display' => 'icon-with-text',
+        'background' => '#007cba',
+        'background_hover' => '#005a87',
+    ],
 ];
 ```
 
 Optionally, you can publish the views using
 
 ```bash
-php artisan vendor:publish --tag="gdpr-consent-database-views"
+php artisan vendor:publish --tag="laravel-gdpr-consent-database-views"
 ```
 
 ## Usage
@@ -220,7 +252,7 @@ $soonExpiringConsents = $user->getConsentsExpiringWithinDays(30);
 
 ### Guest Consent Management
 
-For non-logged-in users, the package provides session-based consent management:
+For non-logged-in users, the package provides session-based consent management using technical cookie codes:
 
 ```php
 use Selli\LaravelGdprConsentDatabase\Services\GuestConsentManager;
@@ -245,10 +277,15 @@ if ($guestManager->hasAllRequiredConsents()) {
     // Guest has all required consents
 }
 
-// Work with specific session ID
-$sessionId = 'custom-session-id';
-$guestManager->giveConsent('terms', [], null, $sessionId);
+// Work with specific technical cookie code (session ID)
+$technicalCookieCode = 'gdpr_abc123_1234567890';
+$guestManager->giveConsent('terms', [], null, $technicalCookieCode);
+
+// Revoke guest consent
+$guestManager->revokeConsent('marketing-emails', $technicalCookieCode);
 ```
+
+The guest consent system uses the `guest_consents` table to track session information and links to `user_consents` using the technical cookie code as the session identifier.
 
 ### Using the Cookie Consent Seeder
 
@@ -286,14 +323,27 @@ php artisan vendor:publish --tag="laravel-gdpr-consent-database-views"
 
 This will publish the view to `resources/views/vendor/gdpr-consent-database/cookie-banner.blade.php`.
 
+#### Customization Options
+
+The cookie banner supports extensive customization through the config file:
+
+- **Text customization**: All button labels, messages, and UI text can be customized
+- **Color theming**: Complete color scheme customization including backgrounds, borders, and button colors
+- **Icon positioning**: Configure the consent settings icon position (right, left, top, bottom)
+- **Icon display**: Choose between icon-only or icon-with-text display modes
+- **Responsive design**: Automatic mobile-friendly adaptations
+
 #### JavaScript Integration
 
 The cookie banner includes built-in JavaScript for handling user interactions. It automatically:
 
 - Shows the banner for users who haven't given consent
 - Handles accept/reject actions via AJAX
-- Stores consent state in localStorage
-- Provides detailed consent management
+- Stores consent state using cookies (`gdpr_consent_given`, `gdpr_session_id`)
+- Provides detailed consent management with expandable categories
+- Shows a consent settings icon after initial consent is given
+- Manages technical cookie codes for session-based guest consent tracking
+- Automatically checks consent status on page load and shows appropriate UI
 
 #### Routes
 
@@ -302,6 +352,7 @@ The package automatically registers these routes for consent management:
 - `POST /gdpr/consent/accept-all` - Accept all consent types
 - `POST /gdpr/consent/reject-all` - Accept only required consents
 - `POST /gdpr/consent/save-preferences` - Save specific consent preferences
+- `POST /gdpr/consent/status` - Get current consent status for the session
 
 Make sure to include the CSRF token in your layout:
 
@@ -311,7 +362,7 @@ Make sure to include the CSRF token in your layout:
 
 ## Database Structure
 
-This package creates two main tables:
+This package creates three main tables:
 
 ### consent_types
 
@@ -323,7 +374,12 @@ Stores the different types of consent that can be requested from users:
 - `description`: Detailed description of what the user is consenting to
 - `required`: Boolean indicating if this consent is required
 - `active`: Boolean indicating if this consent type is currently active
-- `metadata`: JSON field for additional data (e.g., legal references, version)
+- `version`: Version string for consent type versioning (default: '1.0')
+- `validity_months`: Number of months the consent remains valid (nullable)
+- `effective_from`: Timestamp when this version becomes effective (nullable)
+- `effective_until`: Timestamp when this version expires (nullable)
+- `category`: Category of consent ('cookie' or 'other', default: 'other')
+- `metadata`: JSON field for additional data (e.g., legal references)
 - `timestamps`: Created and updated timestamps
 
 ### user_consents
@@ -333,9 +389,11 @@ Stores the actual user consents:
 - `id`: Primary key
 - `consentable_id` and `consentable_type`: Polymorphic relationship to the user model
 - `consent_type_id`: Foreign key to the consent type
+- `consent_version`: Version of the consent type when consent was given (nullable)
 - `granted`: Boolean indicating if consent is currently granted
 - `granted_at`: Timestamp when consent was granted
 - `revoked_at`: Timestamp when consent was revoked (if applicable)
+- `expires_at`: Timestamp when consent expires (nullable)
 - `ip_address`: IP address from which consent was given
 - `user_agent`: User agent from which consent was given
 - `metadata`: JSON field for additional data
@@ -345,11 +403,13 @@ Stores the actual user consents:
 
 Stores guest user information for session-based consent tracking:
 
-- `session_id`: Primary key (Laravel session ID)
+- `session_id`: Primary key (technical cookie code/session ID)
 - `ip_address`: IP address of the guest user
 - `user_agent`: User agent of the guest user
 - `metadata`: JSON field for additional data
 - `timestamps`: Created and updated timestamps
+
+This table works in conjunction with `user_consents` where guest consents are stored using the technical cookie code as the `consentable_id` with `consentable_type` set to the guest consent model.
 
 ## Extending the Package
 
