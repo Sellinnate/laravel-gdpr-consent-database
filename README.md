@@ -194,6 +194,89 @@ $expiredConsents = $user->expiredConsents();
 $soonExpiringConsents = $user->getConsentsExpiringWithinDays(30);
 ```
 
+### Guest Consent Management
+
+For non-logged-in users, the package provides session-based consent management:
+
+```php
+use Selli\LaravelGdprConsentDatabase\Services\GuestConsentManager;
+
+$guestManager = new GuestConsentManager();
+
+// Give consent for a guest user (uses current session)
+$guestManager->giveConsent('marketing-emails', [
+    'source' => 'cookie_banner',
+]);
+
+// Check if guest has given consent
+if ($guestManager->hasConsent('marketing-emails')) {
+    // Guest has consented to marketing emails
+}
+
+// Get all active consents for guest
+$activeConsents = $guestManager->getActiveConsents();
+
+// Check if guest has all required consents
+if ($guestManager->hasAllRequiredConsents()) {
+    // Guest has all required consents
+}
+
+// Work with specific session ID
+$sessionId = 'custom-session-id';
+$guestManager->giveConsent('terms', [], null, $sessionId);
+```
+
+### Cookie Banner Integration
+
+The package provides a blade directive for displaying cookie consent banners:
+
+```blade
+{{-- Basic usage --}}
+@gdprCookieBanner
+
+{{-- With custom options --}}
+@gdprCookieBanner([
+    'title' => 'Cookie Preferences',
+    'message' => 'We use cookies to improve your experience.',
+    'acceptText' => 'Accept All Cookies',
+    'rejectText' => 'Reject Optional',
+    'consentTypes' => $consentTypes
+])
+```
+
+#### Publishing Views
+
+You can publish and customize the cookie banner view:
+
+```bash
+php artisan vendor:publish --tag="laravel-gdpr-consent-database-views"
+```
+
+This will publish the view to `resources/views/vendor/gdpr-consent-database/cookie-banner.blade.php`.
+
+#### JavaScript Integration
+
+The cookie banner includes built-in JavaScript for handling user interactions. It automatically:
+
+- Shows the banner for users who haven't given consent
+- Handles accept/reject actions via AJAX
+- Stores consent state in localStorage
+- Provides detailed consent management
+
+#### Routes
+
+The package automatically registers these routes for consent management:
+
+- `POST /gdpr/consent/accept-all` - Accept all consent types
+- `POST /gdpr/consent/reject-all` - Accept only required consents
+- `POST /gdpr/consent/save-preferences` - Save specific consent preferences
+
+Make sure to include the CSRF token in your layout:
+
+```blade
+<meta name="csrf-token" content="{{ csrf_token() }}">
+```
+
 ## Database Structure
 
 This package creates two main tables:
@@ -223,6 +306,16 @@ Stores the actual user consents:
 - `revoked_at`: Timestamp when consent was revoked (if applicable)
 - `ip_address`: IP address from which consent was given
 - `user_agent`: User agent from which consent was given
+- `metadata`: JSON field for additional data
+- `timestamps`: Created and updated timestamps
+
+### guest_consents
+
+Stores guest user information for session-based consent tracking:
+
+- `session_id`: Primary key (Laravel session ID)
+- `ip_address`: IP address of the guest user
+- `user_agent`: User agent of the guest user
 - `metadata`: JSON field for additional data
 - `timestamps`: Created and updated timestamps
 
