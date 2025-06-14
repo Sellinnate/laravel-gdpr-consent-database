@@ -63,4 +63,25 @@ class GuestConsentController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function getConsentStatus(Request $request)
+    {
+        $consentTypes = ConsentType::where('active', true)->get();
+        $hasAnyConsent = false;
+        $consentStatus = [];
+
+        foreach ($consentTypes as $consentType) {
+            $hasConsent = $this->guestConsentManager->hasConsent($consentType->slug);
+            $consentStatus[$consentType->slug] = $hasConsent;
+            if ($hasConsent) {
+                $hasAnyConsent = true;
+            }
+        }
+
+        return response()->json([
+            'hasAnyConsent' => $hasAnyConsent,
+            'consents' => $consentStatus,
+            'consentTypes' => $consentTypes,
+        ]);
+    }
 }
