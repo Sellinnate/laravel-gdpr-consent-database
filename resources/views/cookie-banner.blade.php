@@ -31,7 +31,7 @@
         <div id="gdpr-cookie-details" class="gdpr-cookie-details" style="display: none;">
             <h4>{{ config('gdpr-consent-database.text.details_header', 'Cookie Categories') }}</h4>
             <div class="gdpr-consent-categories">
-                @foreach($consentTypes ?? [] as $consentType)
+                @foreach(Selli\LaravelGdprConsentDatabase\Models\ConsentType::cookies() as $consentType)
                     <div class="gdpr-consent-item">
                         <label class="gdpr-consent-label">
                             <input type="checkbox" 
@@ -289,19 +289,28 @@
 </style>
 
 <script>
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("script called");
     if (localStorage.getItem('gdpr_consent_given')) {
+        console.log("consent given");
+        document.getElementById('gdpr-cookie-banner').style.display = 'none';
         fetch('/gdpr/consent/status', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
+            },
+            credentials: 'same-origin' // Importante per inviare i cookie
         }).then(response => response.json())
         .then(data => {
-            if (data.hasAnyConsent) {
-                showConsentIcon(data);
-            }
+            showConsentIcon(data);
         }).catch(() => {
             showConsentIcon({});
         });
@@ -313,7 +322,8 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+        },
+        credentials: 'same-origin' // Importante per inviare i cookie
     }).then(response => response.json())
     .then(data => {
         if (!data.hasAnyConsent) {
@@ -332,12 +342,13 @@ function gdprAcceptAll() {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+        },
+        credentials: 'same-origin' // Importante per inviare i cookie
     }).then(() => {
         localStorage.setItem('gdpr_consent_given', 'true');
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status').then(r => r.json()).then(showConsentIcon);
+            fetch('/gdpr/consent/status', { credentials: 'same-origin' }).then(r => r.json()).then(showConsentIcon);
         }, 100);
     });
 }
@@ -348,12 +359,13 @@ function gdprRejectAll() {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+        },
+        credentials: 'same-origin' // Importante per inviare i cookie
     }).then(() => {
         localStorage.setItem('gdpr_consent_given', 'true');
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status').then(r => r.json()).then(showConsentIcon);
+            fetch('/gdpr/consent/status', { credentials: 'same-origin' }).then(r => r.json()).then(showConsentIcon);
         }, 100);
     });
 }
@@ -381,17 +393,19 @@ function gdprSavePreferences() {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
+        credentials: 'same-origin', // Importante per inviare i cookie
         body: JSON.stringify({ consents })
     }).then(() => {
         localStorage.setItem('gdpr_consent_given', 'true');
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status').then(r => r.json()).then(showConsentIcon);
+            fetch('/gdpr/consent/status', { credentials: 'same-origin' }).then(r => r.json()).then(showConsentIcon);
         }, 100);
     });
 }
 
 function showConsentIcon(data) {
+    console.log("showConsentIcon called");
     document.getElementById('gdpr-consent-icon').style.display = 'flex';
     window.gdprCurrentConsents = data.consents;
 }

@@ -117,4 +117,9 @@ class ConsentType extends Model
 
         return $from->copy()->addMonths($this->validity_months);
     }
+
+    public static function cookies()
+    {
+        return static::where('category', 'cookie')->get();
+    }
 }

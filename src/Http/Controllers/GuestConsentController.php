@@ -62,7 +62,10 @@ class GuestConsentController extends Controller
             }
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'consents' => $consents
+        ]);
     }
 
     public function getConsentStatus(Request $request)
