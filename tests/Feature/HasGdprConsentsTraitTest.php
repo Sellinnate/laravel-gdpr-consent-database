@@ -16,6 +16,7 @@ test('può verificare se un utente ha dato un consenso specifico', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     // Inizialmente l'utente non ha dato il consenso
@@ -43,6 +44,7 @@ test('può dare consenso usando l\'ID o lo slug', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     // Dà il consenso usando l'ID
@@ -71,6 +73,7 @@ test('può revocare un consenso', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     // L'utente dà il consenso
@@ -95,6 +98,7 @@ test('può ottenere tutti i consensi attivi', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $consentType2 = ConsentType::create([
@@ -103,6 +107,7 @@ test('può ottenere tutti i consensi attivi', function () {
         'description' => 'Consenso per la profilazione',
         'required' => false,
         'active' => true,
+        'category' => 'cookie',
     ]);
 
     // L'utente dà il consenso solo al primo tipo
@@ -128,6 +133,7 @@ test('può verificare i consensi obbligatori mancanti', function () {
         'description' => 'Accettazione dei termini e condizioni',
         'required' => true,
         'active' => true,
+        'category' => 'other',
     ]);
 
     // Crea un tipo di consenso non obbligatorio
@@ -137,6 +143,7 @@ test('può verificare i consensi obbligatori mancanti', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     // Verifica che l'utente manchi del consenso obbligatorio
@@ -168,6 +175,7 @@ test('può gestire metadati nei consensi tramite trait', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $metadata = [

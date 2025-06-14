@@ -21,6 +21,7 @@ class ConsentType extends Model
         'description',
         'required',
         'active',
+        'category',
         'metadata',
         'version',
         'validity_months',

@@ -13,6 +13,7 @@ test('guest consent can be created and managed', function () {
         'description' => 'Consent for marketing emails',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $termsConsent = ConsentType::create([
@@ -21,6 +22,7 @@ test('guest consent can be created and managed', function () {
         'description' => 'Required terms acceptance',
         'required' => true,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $manager = new GuestConsentManager;
@@ -47,6 +49,7 @@ test('guest consent controller endpoints work', function () {
         'slug' => 'marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     ConsentType::create([
@@ -54,6 +57,7 @@ test('guest consent controller endpoints work', function () {
         'slug' => 'required',
         'required' => true,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $response = $this->post('/gdpr/consent/accept-all');
@@ -78,6 +82,7 @@ test('blade directive renders cookie banner', function () {
             'slug' => 'marketing',
             'required' => false,
             'active' => true,
+            'category' => 'other',
         ]),
     ]);
 
@@ -104,6 +109,7 @@ test('guest consent uses session for identification', function () {
         'slug' => 'marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $manager = new GuestConsentManager;
@@ -122,6 +128,7 @@ test('guest consent respects required consent types', function () {
         'slug' => 'terms',
         'required' => true,
         'active' => true,
+        'category' => 'other',
     ]);
 
     ConsentType::create([
@@ -129,6 +136,7 @@ test('guest consent respects required consent types', function () {
         'slug' => 'marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $manager = new GuestConsentManager;

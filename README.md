@@ -15,6 +15,17 @@ You can install the package via composer:
 composer require selli/laravel-gdpr-consent-database
 ```
 
+## Consent Categories
+
+The package supports categorizing consent types to handle different types of consents appropriately:
+
+- `cookie` - For cookie-related consents (technical, profiling, tracking, etc.)
+- `other` - For non-cookie consents (marketing, newsletters, etc.)
+
+### Cookie Banner Integration
+
+The cookie banner automatically filters and displays only consent types with category `'cookie'`. Other consent types should be managed through your application's registration/preference flows.
+
 You can publish and run the migrations with:
 
 ```bash
@@ -72,15 +83,27 @@ ConsentType::create([
     'description' => 'Agreement to the website terms and conditions',
     'required' => true,
     'active' => true,
+    'category' => 'other',
 ]);
 
-// Create an optional consent type (e.g., Marketing Emails)
+// Create cookie-related consent
+ConsentType::create([
+    'name' => 'Technical Cookies',
+    'slug' => 'technical-cookies',
+    'description' => 'Essential cookies required for website functionality',
+    'required' => true,
+    'active' => true,
+    'category' => 'cookie',
+]);
+
+// Create non-cookie consent
 ConsentType::create([
     'name' => 'Marketing Emails',
-    'slug' => 'marketing-emails',
-    'description' => 'Consent to receive marketing emails',
+    'slug' => 'marketing-emails', 
+    'description' => 'Consent to receive marketing communications',
     'required' => false,
     'active' => true,
+    'category' => 'other',
 ]);
 ```
 
@@ -174,6 +197,7 @@ ConsentType::create([
     'description' => 'Consent to receive marketing emails',
     'required' => false,
     'active' => true,
+    'category' => 'other',
     'version' => '1.0',
     'validity_months' => 12, // Consent valid for 12 months
 ]);
@@ -224,6 +248,14 @@ if ($guestManager->hasAllRequiredConsents()) {
 // Work with specific session ID
 $sessionId = 'custom-session-id';
 $guestManager->giveConsent('terms', [], null, $sessionId);
+```
+
+### Using the Cookie Consent Seeder
+
+Run the seeder to populate default cookie consent types:
+
+```bash
+php artisan db:seed --class="Selli\LaravelGdprConsentDatabase\Database\Seeders\CookieConsentSeeder"
 ```
 
 ### Cookie Banner Integration

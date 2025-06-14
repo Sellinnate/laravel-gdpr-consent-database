@@ -17,6 +17,7 @@ class ConsentTypeFactory extends Factory
             'description' => $this->faker->paragraph(),
             'required' => $this->faker->boolean(20), // 20% di probabilità che sia richiesto
             'active' => $this->faker->boolean(80), // 80% di probabilità che sia attivo
+            'category' => $this->faker->randomElement(['cookie', 'other']),
             'metadata' => null,
         ];
     }
@@ -59,6 +60,34 @@ class ConsentTypeFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'active' => false,
+            ];
+        });
+    }
+
+    /**
+     * Indica che il tipo di consenso è relativo ai cookie.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    public function cookie()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'category' => 'cookie',
+            ];
+        });
+    }
+
+    /**
+     * Indica che il tipo di consenso non è relativo ai cookie.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    public function other()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'category' => 'other',
             ];
         });
     }

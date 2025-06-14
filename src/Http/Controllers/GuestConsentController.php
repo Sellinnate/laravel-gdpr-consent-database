@@ -18,7 +18,7 @@ class GuestConsentController extends Controller
 
     public function acceptAll(Request $request)
     {
-        $consentTypes = ConsentType::where('active', true)->get();
+        $consentTypes = ConsentType::where('active', true)->where('category', 'cookie')->get();
 
         foreach ($consentTypes as $consentType) {
             $this->guestConsentManager->giveConsent($consentType->slug, [
@@ -34,6 +34,7 @@ class GuestConsentController extends Controller
     {
         $requiredConsentTypes = ConsentType::where('active', true)
             ->where('required', true)
+            ->where('category', 'cookie')
             ->get();
 
         foreach ($requiredConsentTypes as $consentType) {
@@ -66,7 +67,7 @@ class GuestConsentController extends Controller
 
     public function getConsentStatus(Request $request)
     {
-        $consentTypes = ConsentType::where('active', true)->get();
+        $consentTypes = ConsentType::where('active', true)->where('category', 'cookie')->get();
         $hasAnyConsent = false;
         $consentStatus = [];
 

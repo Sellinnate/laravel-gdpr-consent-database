@@ -12,6 +12,7 @@ test('consent type versioning works correctly', function () {
         'description' => 'Privacy Policy consent',
         'required' => true,
         'active' => true,
+        'category' => 'other',
         'version' => '1.0',
     ]);
 
@@ -42,6 +43,7 @@ test('consent expiration works correctly', function () {
         'description' => 'Marketing emails consent',
         'required' => false,
         'active' => true,
+        'category' => 'other',
         'version' => '1.0',
         'validity_months' => 12,
     ]);
@@ -81,6 +83,7 @@ test('consent version checking works correctly', function () {
         'description' => 'Terms of Service consent',
         'required' => true,
         'active' => true,
+        'category' => 'other',
         'version' => '1.0',
     ]);
 
@@ -137,6 +140,7 @@ test('consent renewal works correctly', function () {
         'description' => 'Newsletter consent',
         'required' => false,
         'active' => true,
+        'category' => 'other',
         'version' => '1.0',
     ]);
 
@@ -197,6 +201,7 @@ test('expiring consents can be retrieved', function () {
         'description' => 'Data Processing consent',
         'required' => true,
         'active' => true,
+        'category' => 'other',
         'version' => '1.0',
         'validity_months' => 24,
     ]);
