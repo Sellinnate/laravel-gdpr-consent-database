@@ -10,7 +10,8 @@ return new class extends Migration
     {
         Schema::create('user_consents', function (Blueprint $table) {
             $table->id();
-            $table->morphs('consentable');
+            $table->string('consentable_type');
+            $table->string('consentable_id');
             $table->foreignId('consent_type_id')->constrained('consent_types')->onDelete('cascade');
             $table->boolean('granted')->default(false);
             $table->timestamp('granted_at')->nullable();
