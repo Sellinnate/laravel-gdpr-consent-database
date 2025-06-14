@@ -19,6 +19,10 @@
             <button type="button" class="gdpr-btn gdpr-btn-primary" onclick="gdprAcceptAll()">
                 {{ $acceptText ?? 'Accept All' }}
             </button>
+            
+            <button type="button" class="gdpr-btn gdpr-btn-close" onclick="gdprHideBanner()" title="Close">
+                ×
+            </button>
         </div>
     </div>
     
@@ -54,6 +58,13 @@
             </div>
         </div>
     @endif
+</div>
+
+<div id="gdpr-consent-icon" class="gdpr-consent-icon" style="display: none;" onclick="gdprShowBanner()">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
+    </svg>
+    <span>Cookie Settings</span>
 </div>
 
 <style>
@@ -160,6 +171,46 @@
     justify-content: flex-end;
 }
 
+.gdpr-btn-close {
+    background: transparent;
+    color: #666;
+    font-size: 20px;
+    padding: 5px 10px;
+    min-width: auto;
+}
+
+.gdpr-btn-close:hover {
+    background: #f1f1f1;
+    color: #333;
+}
+
+.gdpr-consent-icon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #007cba;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.gdpr-consent-icon:hover {
+    background: #005a87;
+}
+
+.gdpr-consent-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
 @media (max-width: 768px) {
     .gdpr-banner-content {
         flex-direction: column;
@@ -169,14 +220,38 @@
     .gdpr-banner-actions {
         justify-content: center;
     }
+    
+    .gdpr-consent-icon span {
+        display: none;
+    }
+    
+    .gdpr-consent-icon {
+        padding: 12px;
+        border-radius: 50%;
+    }
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    if (!localStorage.getItem('gdpr_consent_given')) {
-        document.getElementById('gdpr-cookie-banner').style.display = 'block';
-    }
+    fetch('/gdpr/consent/status', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if (!data.hasAnyConsent && !localStorage.getItem('gdpr_consent_given')) {
+            document.getElementById('gdpr-cookie-banner').style.display = 'block';
+        } else if (data.hasAnyConsent) {
+            showConsentIcon(data);
+        }
+    }).catch(() => {
+        if (!localStorage.getItem('gdpr_consent_given')) {
+            document.getElementById('gdpr-cookie-banner').style.display = 'block';
+        }
+    });
 });
 
 function gdprAcceptAll() {
@@ -189,6 +264,9 @@ function gdprAcceptAll() {
     }).then(() => {
         localStorage.setItem('gdpr_consent_given', 'true');
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
+        setTimeout(() => {
+            fetch('/gdpr/consent/status').then(r => r.json()).then(showConsentIcon);
+        }, 100);
     });
 }
 
@@ -202,6 +280,9 @@ function gdprRejectAll() {
     }).then(() => {
         localStorage.setItem('gdpr_consent_given', 'true');
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
+        setTimeout(() => {
+            fetch('/gdpr/consent/status').then(r => r.json()).then(showConsentIcon);
+        }, 100);
     });
 }
 
@@ -232,6 +313,35 @@ function gdprSavePreferences() {
     }).then(() => {
         localStorage.setItem('gdpr_consent_given', 'true');
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
+        setTimeout(() => {
+            fetch('/gdpr/consent/status').then(r => r.json()).then(showConsentIcon);
+        }, 100);
     });
+}
+
+function showConsentIcon(data) {
+    document.getElementById('gdpr-consent-icon').style.display = 'flex';
+    window.gdprCurrentConsents = data.consents;
+}
+
+function gdprShowBanner() {
+    document.getElementById('gdpr-cookie-banner').style.display = 'block';
+    document.getElementById('gdpr-consent-icon').style.display = 'none';
+    
+    if (window.gdprCurrentConsents) {
+        Object.keys(window.gdprCurrentConsents).forEach(slug => {
+            const checkbox = document.querySelector(`input[name="consent[${slug}]"]`);
+            if (checkbox && !checkbox.disabled) {
+                checkbox.checked = window.gdprCurrentConsents[slug];
+            }
+        });
+    }
+}
+
+function gdprHideBanner() {
+    document.getElementById('gdpr-cookie-banner').style.display = 'none';
+    if (window.gdprCurrentConsents) {
+        document.getElementById('gdpr-consent-icon').style.display = 'flex';
+    }
 }
 </script>

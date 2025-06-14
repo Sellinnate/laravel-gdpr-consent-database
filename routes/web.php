@@ -12,4 +12,6 @@ Route::prefix('gdpr/consent')
             ->name('reject-all');
         Route::post('save-preferences', [GuestConsentController::class, 'savePreferences'])
             ->name('save-preferences');
+        Route::get('status', [GuestConsentController::class, 'getConsentStatus'])
+            ->name('status');
     });
