@@ -2,6 +2,10 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
+## v1.0.3 - 2025-06-14
+
+Compatibility with MySql, PostgreSQL, sqlite
+
 ## v1.0.1 - 2025-06-14
 
 This release fixes the database migration issue and the readme.md file instructions
