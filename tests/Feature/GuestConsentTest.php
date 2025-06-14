@@ -122,7 +122,7 @@ test('guest consent uses session for identification', function () {
 
 test('guest consent controller endpoints work with technical cookie codes', function () {
     $technicalCookieCode = 'gdpr_test_123';
-    
+
     ConsentType::create([
         'name' => 'Marketing',
         'slug' => 'marketing',
@@ -140,12 +140,12 @@ test('guest consent controller endpoints work with technical cookie codes', func
     ]);
 
     $response = $this->postJson('/gdpr/consent/accept-all', [
-        'technical_cookie_code' => $technicalCookieCode
+        'technical_cookie_code' => $technicalCookieCode,
     ]);
     $response->assertJson(['success' => true]);
 
     $response = $this->postJson('/gdpr/consent/status', [
-        'technical_cookie_code' => $technicalCookieCode
+        'technical_cookie_code' => $technicalCookieCode,
     ]);
     $response->assertJson(['hasAnyConsent' => true]);
 
@@ -157,16 +157,16 @@ test('guest consent controller endpoints work with technical cookie codes', func
         ],
     ]);
     $response->assertJson(['success' => true]);
-    
+
     $response = $this->postJson('/gdpr/consent/status', [
-        'technical_cookie_code' => $technicalCookieCode
+        'technical_cookie_code' => $technicalCookieCode,
     ]);
     $response->assertJson([
         'hasAnyConsent' => true,
         'consents' => [
             'marketing' => false,
             'required' => true,
-        ]
+        ],
     ]);
 });
 

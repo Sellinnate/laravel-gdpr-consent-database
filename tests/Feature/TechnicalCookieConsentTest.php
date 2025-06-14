@@ -6,7 +6,7 @@ use Selli\LaravelGdprConsentDatabase\Services\GuestConsentManager;
 
 test('technical cookie code is used for guest consent identification', function () {
     $technicalCookieCode = 'gdpr_test_cookie_123';
-    
+
     $marketingConsent = ConsentType::create([
         'name' => 'Marketing Email',
         'slug' => 'marketing-email',
@@ -17,7 +17,7 @@ test('technical cookie code is used for guest consent identification', function 
     ]);
 
     $manager = new GuestConsentManager;
-    
+
     $guest = $manager->getGuestConsent($technicalCookieCode);
     expect($guest)->toBeInstanceOf(GuestConsent::class);
     expect($guest->session_id)->toBe($technicalCookieCode);
@@ -32,7 +32,7 @@ test('technical cookie code is used for guest consent identification', function 
 
 test('accept all endpoint accepts technical cookie code', function () {
     $technicalCookieCode = 'gdpr_test_cookie_456';
-    
+
     ConsentType::create([
         'name' => 'Technical Cookies',
         'slug' => 'technical',
@@ -50,11 +50,11 @@ test('accept all endpoint accepts technical cookie code', function () {
     ]);
 
     $response = $this->postJson('/gdpr/consent/accept-all', [
-        'technical_cookie_code' => $technicalCookieCode
+        'technical_cookie_code' => $technicalCookieCode,
     ]);
-    
+
     $response->assertJson(['success' => true]);
-    
+
     $manager = new GuestConsentManager;
     expect($manager->hasConsent('technical', $technicalCookieCode))->toBeTrue();
     expect($manager->hasConsent('marketing', $technicalCookieCode))->toBeTrue();
@@ -62,7 +62,7 @@ test('accept all endpoint accepts technical cookie code', function () {
 
 test('reject all endpoint accepts technical cookie code', function () {
     $technicalCookieCode = 'gdpr_test_cookie_789';
-    
+
     ConsentType::create([
         'name' => 'Technical Cookies',
         'slug' => 'technical',
@@ -80,11 +80,11 @@ test('reject all endpoint accepts technical cookie code', function () {
     ]);
 
     $response = $this->postJson('/gdpr/consent/reject-all', [
-        'technical_cookie_code' => $technicalCookieCode
+        'technical_cookie_code' => $technicalCookieCode,
     ]);
-    
+
     $response->assertJson(['success' => true]);
-    
+
     $manager = new GuestConsentManager;
     expect($manager->hasConsent('technical', $technicalCookieCode))->toBeTrue();
     expect($manager->hasConsent('marketing', $technicalCookieCode))->toBeFalse();
@@ -92,7 +92,7 @@ test('reject all endpoint accepts technical cookie code', function () {
 
 test('save preferences endpoint accepts technical cookie code', function () {
     $technicalCookieCode = 'gdpr_test_cookie_101';
-    
+
     ConsentType::create([
         'name' => 'Technical Cookies',
         'slug' => 'technical',
@@ -114,11 +114,11 @@ test('save preferences endpoint accepts technical cookie code', function () {
         'consents' => [
             'technical' => true,
             'marketing' => false,
-        ]
+        ],
     ]);
-    
+
     $response->assertJson(['success' => true]);
-    
+
     $manager = new GuestConsentManager;
     expect($manager->hasConsent('technical', $technicalCookieCode))->toBeTrue();
     expect($manager->hasConsent('marketing', $technicalCookieCode))->toBeFalse();
@@ -126,7 +126,7 @@ test('save preferences endpoint accepts technical cookie code', function () {
 
 test('consent status endpoint accepts technical cookie code', function () {
     $technicalCookieCode = 'gdpr_test_cookie_202';
-    
+
     ConsentType::create([
         'name' => 'Technical Cookies',
         'slug' => 'technical',
@@ -147,21 +147,21 @@ test('consent status endpoint accepts technical cookie code', function () {
     $manager->giveConsent('technical', ['source' => 'test'], null, $technicalCookieCode);
 
     $response = $this->postJson('/gdpr/consent/status', [
-        'technical_cookie_code' => $technicalCookieCode
+        'technical_cookie_code' => $technicalCookieCode,
     ]);
-    
+
     $response->assertJson([
         'hasAnyConsent' => true,
         'consents' => [
             'technical' => true,
             'marketing' => false,
-        ]
+        ],
     ]);
 });
 
 test('technical cookie code falls back to gdpr_session_id cookie', function () {
     $sessionId = 'fallback_session_123';
-    
+
     ConsentType::create([
         'name' => 'Technical Cookies',
         'slug' => 'technical',
@@ -171,9 +171,9 @@ test('technical cookie code falls back to gdpr_session_id cookie', function () {
     ]);
 
     $response = $this->postJson('/gdpr/consent/accept-all', []);
-    
+
     $response->assertJson(['success' => true]);
-    
+
     $manager = new GuestConsentManager;
     $guest = $manager->getGuestConsent();
     expect($manager->hasConsent('technical', $guest->session_id))->toBeTrue();
@@ -182,7 +182,7 @@ test('technical cookie code falls back to gdpr_session_id cookie', function () {
 test('different technical cookie codes maintain separate consent states', function () {
     $cookieCode1 = 'gdpr_user_1';
     $cookieCode2 = 'gdpr_user_2';
-    
+
     ConsentType::create([
         'name' => 'Marketing Cookies',
         'slug' => 'marketing',
@@ -192,19 +192,19 @@ test('different technical cookie codes maintain separate consent states', functi
     ]);
 
     $manager = new GuestConsentManager;
-    
+
     $manager->giveConsent('marketing', ['source' => 'test'], null, $cookieCode1);
-    
+
     expect($manager->hasConsent('marketing', $cookieCode1))->toBeTrue();
     expect($manager->hasConsent('marketing', $cookieCode2))->toBeFalse();
-    
+
     $manager->giveConsent('marketing', ['source' => 'test'], null, $cookieCode2);
-    
+
     expect($manager->hasConsent('marketing', $cookieCode1))->toBeTrue();
     expect($manager->hasConsent('marketing', $cookieCode2))->toBeTrue();
-    
+
     $manager->revokeConsent('marketing', $cookieCode1);
-    
+
     expect($manager->hasConsent('marketing', $cookieCode1))->toBeFalse();
     expect($manager->hasConsent('marketing', $cookieCode2))->toBeTrue();
 });
