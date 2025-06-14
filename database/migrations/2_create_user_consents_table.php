@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('user_consents', function (Blueprint $table) {
             $table->id();
-            $table->morphs('consentable'); // Permette di collegare il consenso a qualsiasi modello (User, Customer, ecc.)
+            $table->morphs('consentable');
             $table->foreignId('consent_type_id')->constrained('consent_types')->onDelete('cascade');
             $table->boolean('granted')->default(false);
             $table->timestamp('granted_at')->nullable();
@@ -20,8 +20,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            // Indice composito per ottimizzare le query
-            $table->index(['consentable_type', 'consentable_id', 'consent_type_id']);
+            $table->index(['consentable_type', 'consentable_id', 'consent_type_id'], 'uc_consentable_consent_type_idx');
         });
     }
 
