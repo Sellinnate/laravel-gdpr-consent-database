@@ -38,17 +38,17 @@ class GuestConsent extends Model
 
     public static function findOrCreateForSession($sessionId = null)
     {
-        if (!$sessionId) {
+        if (! $sessionId) {
             // Avvia la sessione se non è già stata avviata
-            if (!session()->isStarted()) {
+            if (! session()->isStarted()) {
                 session()->start();
             }
-            
+
             // Usa l'ID di sessione corrente o crea un ID di sessione persistente nei cookie
             $sessionId = request()->cookie('gdpr_session_id') ?: session()->getId();
-            
+
             // Assicurati che l'ID di sessione sia salvato in un cookie persistente
-            if (!request()->cookie('gdpr_session_id')) {
+            if (! request()->cookie('gdpr_session_id')) {
                 cookie()->queue('gdpr_session_id', $sessionId, 43200); // 30 giorni
             }
         }

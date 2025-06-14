@@ -64,7 +64,7 @@ class GuestConsentController extends Controller
 
         return response()->json([
             'success' => true,
-            'consents' => $consents
+            'consents' => $consents,
         ]);
     }
 
