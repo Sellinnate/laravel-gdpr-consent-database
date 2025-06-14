@@ -17,6 +17,7 @@ test('può creare un consenso utente', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $userConsent = new UserConsent([
@@ -50,6 +51,7 @@ test('può revocare un consenso utente', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $userConsent = new UserConsent([
@@ -87,6 +89,7 @@ test('può filtrare i consensi attivi', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $consentType2 = ConsentType::create([
@@ -95,6 +98,7 @@ test('può filtrare i consensi attivi', function () {
         'description' => 'Consenso per la profilazione',
         'required' => false,
         'active' => true,
+        'category' => 'cookie',
     ]);
 
     // Crea un consenso attivo
@@ -142,6 +146,7 @@ test('può gestire metadati JSON nei consensi', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $metadata = [

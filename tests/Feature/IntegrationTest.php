@@ -18,6 +18,7 @@ test('flusso completo di gestione del consenso', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $termsConsent = ConsentType::create([
@@ -26,6 +27,7 @@ test('flusso completo di gestione del consenso', function () {
         'description' => 'Accettazione dei termini e condizioni',
         'required' => true,
         'active' => true,
+        'category' => 'other',
     ]);
 
     $profilingConsent = ConsentType::create([
@@ -34,6 +36,7 @@ test('flusso completo di gestione del consenso', function () {
         'description' => 'Consenso per la profilazione delle preferenze',
         'required' => false,
         'active' => true,
+        'category' => 'cookie',
     ]);
 
     // Verifichiamo che l'utente non abbia ancora dato alcun consenso

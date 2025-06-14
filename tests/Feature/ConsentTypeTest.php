@@ -9,6 +9,7 @@ test('può creare un tipo di consenso', function () {
         'description' => 'Consenso per l\'invio di email di marketing',
         'required' => false,
         'active' => true,
+        'category' => 'other',
     ]);
 
     expect($consentType)->toBeInstanceOf(ConsentType::class)
@@ -53,6 +54,7 @@ test('può gestire metadati JSON', function () {
         'description' => 'Consenso per i cookie tecnici essenziali',
         'required' => true,
         'active' => true,
+        'category' => 'cookie',
         'metadata' => $metadata,
     ]);
 
