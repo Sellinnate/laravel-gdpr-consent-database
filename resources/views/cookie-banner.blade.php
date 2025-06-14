@@ -2,23 +2,23 @@
 <div id="gdpr-cookie-banner" class="gdpr-cookie-banner" style="">
     <div class="gdpr-banner-content">
         <div class="gdpr-banner-text">
-            <h3>{{ $title ?? 'Cookie Consent' }}</h3>
-            <p>{{ $message ?? 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.' }}</p>
+            <h3>{{ $title ?? config('gdpr-consent-database.text.title', 'Cookie Consent') }}</h3>
+            <p>{{ $message ?? config('gdpr-consent-database.text.message', 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.') }}</p>
         </div>
         
         <div class="gdpr-banner-actions">
             @if($showDetails ?? true)
                 <button type="button" class="gdpr-btn gdpr-btn-secondary" onclick="gdprShowDetails()">
-                    {{ $detailsText ?? 'Cookie Details' }}
+                    {{ $detailsText ?? config('gdpr-consent-database.text.details_text', 'Cookie Details') }}
                 </button>
             @endif
             
             <button type="button" class="gdpr-btn gdpr-btn-secondary" onclick="gdprRejectAll()">
-                {{ $rejectText ?? 'Reject All' }}
+                {{ $rejectText ?? config('gdpr-consent-database.text.reject_text', 'Reject All') }}
             </button>
             
             <button type="button" class="gdpr-btn gdpr-btn-primary" onclick="gdprAcceptAll()">
-                {{ $acceptText ?? 'Accept All' }}
+                {{ $acceptText ?? config('gdpr-consent-database.text.accept_text', 'Accept All') }}
             </button>
             
             <button type="button" class="gdpr-btn gdpr-btn-close" onclick="gdprHideBanner()" title="Close">
@@ -29,7 +29,7 @@
     
     @if($showDetails ?? true)
         <div id="gdpr-cookie-details" class="gdpr-cookie-details" style="display: none;">
-            <h4>Cookie Categories</h4>
+            <h4>{{ config('gdpr-consent-database.text.details_header', 'Cookie Categories') }}</h4>
             <div class="gdpr-consent-categories">
                 @foreach($consentTypes ?? [] as $consentType)
                     <div class="gdpr-consent-item">
@@ -41,7 +41,7 @@
                                    class="gdpr-consent-checkbox">
                             <span class="gdpr-consent-name">{{ $consentType->name }}</span>
                             @if($consentType->required)
-                                <span class="gdpr-required">(Required)</span>
+                                <span class="gdpr-required">{{ config('gdpr-consent-database.text.required_text', '(Required)') }}</span>
                             @endif
                         </label>
                         <p class="gdpr-consent-description">{{ $consentType->description }}</p>
@@ -51,33 +51,55 @@
             
             <div class="gdpr-details-actions">
                 <button type="button" class="gdpr-btn gdpr-btn-secondary" onclick="gdprHideDetails()">
-                    {{ $backText ?? 'Back' }}
+                    {{ $backText ?? config('gdpr-consent-database.text.back_text', 'Back') }}
                 </button>
                 <button type="button" class="gdpr-btn gdpr-btn-primary" onclick="gdprSavePreferences()">
-                    {{ $saveText ?? 'Save Preferences' }}
+                    {{ $saveText ?? config('gdpr-consent-database.text.save_text', 'Save Preferences') }}
                 </button>
             </div>
         </div>
     @endif
 </div>
 
-<div id="gdpr-consent-icon" class="gdpr-consent-icon" style="display: none;" onclick="gdprShowBanner()">
+@php
+    $iconPosition = config('gdpr-consent-database.icon.position', 'right');
+    $iconDisplay = config('gdpr-consent-database.icon.display', 'icon-with-text');
+    $iconPositionClass = 'gdpr-icon-' . $iconPosition;
+    $iconDisplayClass = 'gdpr-icon-' . str_replace('-', '_', $iconDisplay);
+@endphp
+
+<div id="gdpr-consent-icon" class="gdpr-consent-icon {{ $iconPositionClass }} {{ $iconDisplayClass }}" style="display: none;" onclick="gdprShowBanner()">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
     </svg>
-    <span>Cookie Settings</span>
+    <span>{{ config('gdpr-consent-database.text.icon_text', 'Cookie Settings') }}</span>
 </div>
 
 <style>
+:root {
+    --gdpr-banner-bg: {{ config('gdpr-consent-database.colors.banner_background', '#fff') }};
+    --gdpr-banner-border: {{ config('gdpr-consent-database.colors.banner_border', '#ddd') }};
+    --gdpr-banner-shadow: {{ config('gdpr-consent-database.colors.banner_shadow', 'rgba(0,0,0,0.1)') }};
+    --gdpr-text-primary: {{ config('gdpr-consent-database.colors.text_primary', '#333') }};
+    --gdpr-text-secondary: {{ config('gdpr-consent-database.colors.text_secondary', '#666') }};
+    --gdpr-btn-primary-bg: {{ config('gdpr-consent-database.colors.button_primary_bg', '#007cba') }};
+    --gdpr-btn-primary-hover: {{ config('gdpr-consent-database.colors.button_primary_hover', '#005a87') }};
+    --gdpr-btn-secondary-bg: {{ config('gdpr-consent-database.colors.button_secondary_bg', '#f1f1f1') }};
+    --gdpr-btn-secondary-hover: {{ config('gdpr-consent-database.colors.button_secondary_hover', '#e1e1e1') }};
+    --gdpr-details-border: {{ config('gdpr-consent-database.colors.details_border', '#eee') }};
+    --gdpr-icon-bg: {{ config('gdpr-consent-database.icon.background', '#007cba') }};
+    --gdpr-icon-hover: {{ config('gdpr-consent-database.icon.background_hover', '#005a87') }};
+}
+
 .gdpr-cookie-banner {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: #fff;
-    border-top: 1px solid #ddd;
+    background: var(--gdpr-banner-bg);
+    border-top: 1px solid var(--gdpr-banner-border);
     padding: 20px;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 -2px 10px var(--gdpr-banner-shadow);
     z-index: 9999;
 }
 
@@ -97,7 +119,7 @@
 
 .gdpr-banner-text p {
     margin: 0;
-    color: #666;
+    color: var(--gdpr-text-secondary);
 }
 
 .gdpr-banner-actions {
@@ -116,27 +138,27 @@
 }
 
 .gdpr-btn-primary {
-    background: #007cba;
+    background: var(--gdpr-btn-primary-bg);
     color: white;
 }
 
 .gdpr-btn-primary:hover {
-    background: #005a87;
+    background: var(--gdpr-btn-primary-hover);
 }
 
 .gdpr-btn-secondary {
-    background: #f1f1f1;
-    color: #333;
+    background: var(--gdpr-btn-secondary-bg);
+    color: var(--gdpr-text-primary);
 }
 
 .gdpr-btn-secondary:hover {
-    background: #e1e1e1;
+    background: var(--gdpr-btn-secondary-hover);
 }
 
 .gdpr-cookie-details {
     margin-top: 20px;
     padding-top: 20px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--gdpr-details-border);
 }
 
 .gdpr-consent-categories {
@@ -155,14 +177,14 @@
 }
 
 .gdpr-required {
-    color: #666;
+    color: var(--gdpr-text-secondary);
     font-weight: normal;
     font-size: 12px;
 }
 
 .gdpr-consent-description {
     margin: 5px 0 0 30px;
-    color: #666;
+    color: var(--gdpr-text-secondary);
     font-size: 14px;
 }
 
@@ -174,22 +196,20 @@
 
 .gdpr-btn-close {
     background: transparent;
-    color: #666;
+    color: var(--gdpr-text-secondary);
     font-size: 20px;
     padding: 5px 10px;
     min-width: auto;
 }
 
 .gdpr-btn-close:hover {
-    background: #f1f1f1;
-    color: #333;
+    background: var(--gdpr-btn-secondary-bg);
+    color: var(--gdpr-text-primary);
 }
 
 .gdpr-consent-icon {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #007cba;
+    background: var(--gdpr-icon-bg);
     color: white;
     padding: 12px 16px;
     border-radius: 25px;
@@ -204,12 +224,47 @@
 }
 
 .gdpr-consent-icon:hover {
-    background: #005a87;
+    background: var(--gdpr-icon-hover);
 }
 
 .gdpr-consent-icon svg {
     width: 20px;
     height: 20px;
+}
+
+/* Icon positioning */
+.gdpr-icon-right {
+    bottom: 20px;
+    right: 20px;
+}
+
+.gdpr-icon-left {
+    bottom: 20px;
+    left: 20px;
+}
+
+.gdpr-icon-top {
+    top: 20px;
+    right: 20px;
+}
+
+.gdpr-icon-bottom {
+    bottom: 20px;
+    right: 20px;
+}
+
+/* Icon display options */
+.gdpr-icon-icon_only span {
+    display: none;
+}
+
+.gdpr-icon-icon_only {
+    padding: 12px;
+    border-radius: 50%;
+}
+
+.gdpr-icon-icon_with_text span {
+    display: inline;
 }
 
 @media (max-width: 768px) {
@@ -222,11 +277,11 @@
         justify-content: center;
     }
     
-    .gdpr-consent-icon span {
+    .gdpr-icon-icon_with_text span {
         display: none;
     }
     
-    .gdpr-consent-icon {
+    .gdpr-icon-icon_with_text {
         padding: 12px;
         border-radius: 50%;
     }
