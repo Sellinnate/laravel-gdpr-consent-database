@@ -234,6 +234,24 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    if (localStorage.getItem('gdpr_consent_given')) {
+        fetch('/gdpr/consent/status', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.hasAnyConsent) {
+                showConsentIcon(data);
+            }
+        }).catch(() => {
+            showConsentIcon({});
+        });
+        return;
+    }
+    
     fetch('/gdpr/consent/status', {
         method: 'GET',
         headers: {
@@ -242,15 +260,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }).then(response => response.json())
     .then(data => {
-        if (!data.hasAnyConsent && !localStorage.getItem('gdpr_consent_given')) {
+        if (!data.hasAnyConsent) {
             document.getElementById('gdpr-cookie-banner').style.display = 'block';
-        } else if (data.hasAnyConsent) {
+        } else {
             showConsentIcon(data);
         }
     }).catch(() => {
-        if (!localStorage.getItem('gdpr_consent_given')) {
-            document.getElementById('gdpr-cookie-banner').style.display = 'block';
-        }
+        document.getElementById('gdpr-cookie-banner').style.display = 'block';
     });
 });
 
