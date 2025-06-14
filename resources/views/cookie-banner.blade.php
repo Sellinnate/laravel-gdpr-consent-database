@@ -1,4 +1,5 @@
-<div id="gdpr-cookie-banner" class="gdpr-cookie-banner" style="display: none;">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<div id="gdpr-cookie-banner" class="gdpr-cookie-banner" style="">
     <div class="gdpr-banner-content">
         <div class="gdpr-banner-text">
             <h3>{{ $title ?? 'Cookie Consent' }}</h3>
