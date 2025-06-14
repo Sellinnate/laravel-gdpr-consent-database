@@ -2,6 +2,10 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
+## v1.0.1 - 2025-06-14
+
+This release fixes the database migration issue and the readme.md file instructions
+
 ## v1.0.0 - 2025-06-14
 
 🎉 First stable release of `laravel-gdpr-consent-database`
