@@ -43,8 +43,8 @@ class LaravelGdprConsentDatabaseServiceProvider extends PackageServiceProvider
 
     protected function registerBladeDirectives()
     {
-        Blade::directive('gdprCookieBanner', function ($expression) {
-            return "<?php echo view('gdpr-consent-database::cookie-banner', $expression ?: [])->render(); ?>";
+        Blade::directive('gdprCookieBanner', function ($expression = []) {
+            return "<?php echo view('gdpr-consent-database::cookie-banner', $expression)->render(); ?>";
         });
     }
 
