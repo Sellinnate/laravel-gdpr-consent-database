@@ -296,18 +296,36 @@ function getCookie(name) {
     return null;
 }
 
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+}
+
+function getTechnicalCookieCode() {
+    return getCookie('gdpr_session_id') || generateSessionId();
+}
+
+function generateSessionId() {
+    return 'gdpr_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log("script called");
-    if (localStorage.getItem('gdpr_consent_given')) {
+    const technicalCookieCode = getTechnicalCookieCode();
+    setCookie('gdpr_session_id', technicalCookieCode, 30);
+    
+    if (getCookie('gdpr_consent_given')) {
         console.log("consent given");
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         fetch('/gdpr/consent/status', {
-            method: 'GET',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            credentials: 'same-origin' // Importante per inviare i cookie
+            credentials: 'same-origin',
+            body: JSON.stringify({ technical_cookie_code: technicalCookieCode })
         }).then(response => response.json())
         .then(data => {
             showConsentIcon(data);
@@ -318,12 +336,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     fetch('/gdpr/consent/status', {
-        method: 'GET',
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        credentials: 'same-origin' // Importante per inviare i cookie
+        credentials: 'same-origin',
+        body: JSON.stringify({ technical_cookie_code: technicalCookieCode })
     }).then(response => response.json())
     .then(data => {
         if (!data.hasAnyConsent) {
@@ -337,35 +356,59 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function gdprAcceptAll() {
+    const technicalCookieCode = getTechnicalCookieCode();
+    setCookie('gdpr_session_id', technicalCookieCode, 30);
+    
     fetch('/gdpr/consent/accept-all', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        credentials: 'same-origin' // Importante per inviare i cookie
+        credentials: 'same-origin',
+        body: JSON.stringify({ technical_cookie_code: technicalCookieCode })
     }).then(() => {
-        localStorage.setItem('gdpr_consent_given', 'true');
+        setCookie('gdpr_consent_given', 'true', 30);
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status', { credentials: 'same-origin' }).then(r => r.json()).then(showConsentIcon);
+            fetch('/gdpr/consent/status', { 
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ technical_cookie_code: technicalCookieCode })
+            }).then(r => r.json()).then(showConsentIcon);
         }, 100);
     });
 }
 
 function gdprRejectAll() {
+    const technicalCookieCode = getTechnicalCookieCode();
+    setCookie('gdpr_session_id', technicalCookieCode, 30);
+    
     fetch('/gdpr/consent/reject-all', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        credentials: 'same-origin' // Importante per inviare i cookie
+        credentials: 'same-origin',
+        body: JSON.stringify({ technical_cookie_code: technicalCookieCode })
     }).then(() => {
-        localStorage.setItem('gdpr_consent_given', 'true');
+        setCookie('gdpr_consent_given', 'true', 30);
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status', { credentials: 'same-origin' }).then(r => r.json()).then(showConsentIcon);
+            fetch('/gdpr/consent/status', { 
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ technical_cookie_code: technicalCookieCode })
+            }).then(r => r.json()).then(showConsentIcon);
         }, 100);
     });
 }
@@ -379,6 +422,9 @@ function gdprHideDetails() {
 }
 
 function gdprSavePreferences() {
+    const technicalCookieCode = getTechnicalCookieCode();
+    setCookie('gdpr_session_id', technicalCookieCode, 30);
+    
     const checkboxes = document.querySelectorAll('.gdpr-consent-checkbox');
     const consents = {};
     
@@ -393,13 +439,21 @@ function gdprSavePreferences() {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        credentials: 'same-origin', // Importante per inviare i cookie
-        body: JSON.stringify({ consents })
+        credentials: 'same-origin',
+        body: JSON.stringify({ consents, technical_cookie_code: technicalCookieCode })
     }).then(() => {
-        localStorage.setItem('gdpr_consent_given', 'true');
+        setCookie('gdpr_consent_given', 'true', 30);
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status', { credentials: 'same-origin' }).then(r => r.json()).then(showConsentIcon);
+            fetch('/gdpr/consent/status', { 
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ technical_cookie_code: technicalCookieCode })
+            }).then(r => r.json()).then(showConsentIcon);
         }, 100);
     });
 }
