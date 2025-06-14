@@ -17,7 +17,7 @@ class LaravelGdprConsentDatabaseServiceProvider extends PackageServiceProvider
          *
          * More info: https://github.com/spatie/laravel-package-tools
          */
-        
+
         $package
             ->name('laravel-gdpr-consent-database')
             ->hasConfigFile()
