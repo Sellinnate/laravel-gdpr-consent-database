@@ -17,18 +17,20 @@ class LaravelGdprConsentDatabaseServiceProvider extends PackageServiceProvider
          *
          * More info: https://github.com/spatie/laravel-package-tools
          */
+        
         $package
             ->name('laravel-gdpr-consent-database')
             ->hasConfigFile()
             ->hasViews()
             ->hasRoutes('web')
-            ->hasMigration('create_laravel_gdpr_consent_database_table')
-            ->hasMigration('create_user_consents_table')
-            ->hasMigration('create_consent_types_table')
-            ->hasMigration('add_versioning_to_consent_types_table')
-            ->hasMigration('add_expiration_to_user_consents_table')
-            ->hasMigration('create_guest_consents_table')
             ->hasCommand(LaravelGdprConsentDatabaseCommand::class);
+
+        $migrationPath = __DIR__.'/../database/migrations/';
+        if (file_exists($migrationPath)) {
+            foreach (\Illuminate\Support\Facades\File::files($migrationPath) as $migration) {
+                $package->hasMigration($migration->getBasename());
+            }
+        }
     }
 
     public function boot()

@@ -18,14 +18,14 @@ composer require selli/laravel-gdpr-consent-database
 You can publish and run the migrations with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-gdpr-consent-database-migrations"
+php artisan vendor:publish --tag="gdpr-consent-database-migrations"
 php artisan migrate
 ```
 
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-gdpr-consent-database-config"
+php artisan vendor:publish --tag="gdpr-consent-database-config"
 ```
 
 This is the contents of the published config file:
@@ -38,7 +38,7 @@ return [
 Optionally, you can publish the views using
 
 ```bash
-php artisan vendor:publish --tag="laravel-gdpr-consent-database-views"
+php artisan vendor:publish --tag="gdpr-consent-database-views"
 ```
 
 ## Usage
