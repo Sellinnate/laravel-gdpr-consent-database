@@ -31,7 +31,9 @@
     "autoload": {
         "psr-4": {
             "Selli\\LaravelGdprConsentDatabase\\": "src/",
-            "Selli\\LaravelGdprConsentDatabase\\Database\\Factories\\": "database/factories/"
+            "Selli\\LaravelGdprConsentDatabase\\Database\\Factories\\": "database/factories/",
+            "Selli\\LaravelGdprConsentDatabase\\Database\\Seeders\\": "database/seeders/"
+
         }
     },
     "autoload-dev": {

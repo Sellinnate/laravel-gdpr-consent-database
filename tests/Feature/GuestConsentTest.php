@@ -49,7 +49,7 @@ test('guest consent controller endpoints work', function () {
         'slug' => 'marketing',
         'required' => false,
         'active' => true,
-        'category' => 'other',
+        'category' => 'cookie',
     ]);
 
     ConsentType::create([
@@ -57,16 +57,16 @@ test('guest consent controller endpoints work', function () {
         'slug' => 'required',
         'required' => true,
         'active' => true,
-        'category' => 'other',
+        'category' => 'cookie',
     ]);
 
-    $response = $this->post('/gdpr/consent/accept-all');
+    $response = $this->postJson('/gdpr/consent/accept-all');
     $response->assertJson(['success' => true]);
 
-    $response = $this->post('/gdpr/consent/reject-all');
+    $response = $this->postJson('/gdpr/consent/reject-all');
     $response->assertJson(['success' => true]);
 
-    $response = $this->post('/gdpr/consent/save-preferences', [
+    $response = $this->postJson('/gdpr/consent/save-preferences', [
         'consents' => [
             'marketing' => true,
             'required' => true,
@@ -82,7 +82,7 @@ test('blade directive renders cookie banner', function () {
             'slug' => 'marketing',
             'required' => false,
             'active' => true,
-            'category' => 'other',
+            'category' => 'cookie',
         ]),
     ]);
 
@@ -118,6 +118,56 @@ test('guest consent uses session for identification', function () {
 
     expect($manager->hasConsent('marketing', $sessionId1))->toBeTrue();
     expect($manager->hasConsent('marketing', $sessionId2))->toBeFalse();
+});
+
+test('guest consent controller endpoints work with technical cookie codes', function () {
+    $technicalCookieCode = 'gdpr_test_123';
+
+    ConsentType::create([
+        'name' => 'Marketing',
+        'slug' => 'marketing',
+        'required' => false,
+        'active' => true,
+        'category' => 'cookie',
+    ]);
+
+    ConsentType::create([
+        'name' => 'Required',
+        'slug' => 'required',
+        'required' => true,
+        'active' => true,
+        'category' => 'cookie',
+    ]);
+
+    $response = $this->postJson('/gdpr/consent/accept-all', [
+        'technical_cookie_code' => $technicalCookieCode,
+    ]);
+    $response->assertJson(['success' => true]);
+
+    $response = $this->postJson('/gdpr/consent/status', [
+        'technical_cookie_code' => $technicalCookieCode,
+    ]);
+    $response->assertJson(['hasAnyConsent' => true]);
+
+    $response = $this->postJson('/gdpr/consent/save-preferences', [
+        'technical_cookie_code' => $technicalCookieCode,
+        'consents' => [
+            'marketing' => false,
+            'required' => true,
+        ],
+    ]);
+    $response->assertJson(['success' => true]);
+
+    $response = $this->postJson('/gdpr/consent/status', [
+        'technical_cookie_code' => $technicalCookieCode,
+    ]);
+    $response->assertJson([
+        'hasAnyConsent' => true,
+        'consents' => [
+            'marketing' => false,
+            'required' => true,
+        ],
+    ]);
 });
 
 test('guest consent respects required consent types', function () {
