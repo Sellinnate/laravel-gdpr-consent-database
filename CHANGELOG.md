@@ -2,6 +2,10 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
+## v1.0.4 - 2025-06-15
+
+Minor fixes to Cookie Banner. It now integrate links to Cookie Policy and Privacy Policy
+
 ## v1.0.3 - 2025-06-14
 
 Compatibility with MySql, PostgreSQL, sqlite
