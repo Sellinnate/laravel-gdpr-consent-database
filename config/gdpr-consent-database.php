@@ -4,7 +4,7 @@
 return [
     'text' => [
         'title' => 'Cookie Consent',
-        'message' => 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.',
+        'message' => 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. For additional information, please see our <a href="cookie-policy" target="_blank">Cookie Policy</a> and <a href="privacy-policy" target="_blank">Privacy Policy</a>.',
         'accept_text' => 'Accept All',
         'reject_text' => 'Reject All',
         'details_text' => 'Cookie Details',

@@ -3,7 +3,7 @@
     <div class="gdpr-banner-content">
         <div class="gdpr-banner-text">
             <h3>{{ $title ?? config('gdpr-consent-database.text.title', 'Cookie Consent') }}</h3>
-            <p>{{ $message ?? config('gdpr-consent-database.text.message', 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.') }}</p>
+            <p>{!! $message ?? config('gdpr-consent-database.text.message', 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. For additional information, please see our <a href="cookie-policy">Cookie Policy</a> and <a href="privacy-policy">Privacy Policy</a>.</p>')!!}
         </div>
         
         <div class="gdpr-banner-actions">
@@ -140,6 +140,10 @@
 .gdpr-btn-primary {
     background: var(--gdpr-btn-primary-bg);
     color: white;
+}
+
+.gdpr-banner-text a {
+    color: var(--gdpr-btn-primary-bg);
 }
 
 .gdpr-btn-primary:hover {
