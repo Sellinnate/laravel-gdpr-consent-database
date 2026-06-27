@@ -2,7 +2,7 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
-## v2.0.0 - unreleased
+## v2.0.0 - 2026-06-27
 
 🚀 Major enterprise release. **Breaking changes** — see [UPGRADE.md](UPGRADE.md).
 
