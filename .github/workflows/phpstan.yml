@@ -28,7 +28,9 @@ jobs:
           coverage: none
 
       - name: Install dependencies
-        run: composer update --prefer-dist --no-interaction
+        run: |
+          composer config --global policy.advisories.block false
+          composer update --prefer-dist --no-interaction
 
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress --error-format=github

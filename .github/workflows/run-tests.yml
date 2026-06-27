@@ -51,6 +51,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # Composer 2.10+ blocks advisory-affected versions by default; we test compatibility
+          # across the whole supported range, so disable the block in CI.
+          composer config --global policy.advisories.block false
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
@@ -76,7 +79,9 @@ jobs:
           coverage: pcov
 
       - name: Install dependencies
-        run: composer update --prefer-dist --no-interaction
+        run: |
+          composer config --global policy.advisories.block false
+          composer update --prefer-dist --no-interaction
 
       - name: Enforce coverage threshold
         run: vendor/bin/pest --coverage --min=90 --ci
@@ -99,7 +104,9 @@ jobs:
           coverage: pcov
 
       - name: Install dependencies
-        run: composer update --prefer-dist --no-interaction
+        run: |
+          composer config --global policy.advisories.block false
+          composer update --prefer-dist --no-interaction
 
       - name: Run mutation testing
         run: vendor/bin/pest --mutate --everything --covered-only --min=85 --ci
