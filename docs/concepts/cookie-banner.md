@@ -1,6 +1,7 @@
 ---
 title: "Cookie Banner"
 description: "The built-in, configurable cookie consent banner."
+type: concept
 ---
 
 # Cookie Banner

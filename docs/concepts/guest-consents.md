@@ -1,6 +1,7 @@
 ---
 title: "Guest Consents"
 description: "Track consent for anonymous (not-logged-in) visitors."
+type: concept
 ---
 
 # Guest Consents

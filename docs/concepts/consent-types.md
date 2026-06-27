@@ -1,6 +1,7 @@
 ---
 title: "Consent Types"
 description: "Define what users can consent to."
+type: concept
 ---
 
 # Consent Types
@@ -29,13 +30,13 @@ ConsentType::create([
 | Field | Type | Purpose |
 |---|---|---|
 | `name` | string | Human-readable name |
-| `slug` | string | **Stable** identifier — your code references this. Not unique on its own (see [Versioning](/usage/versioning)) |
+| `slug` | string | **Stable** identifier — your code references this. Not unique on its own (see [Versioning](/concepts/versioning)) |
 | `description` | string? | What the user is agreeing to |
 | `required` | bool | Whether the consent is mandatory for compliance |
 | `active` | bool | Whether this is the current, offered version |
 | `category` | string | `cookie` (shown in the banner) or `other` |
 | `version` | string | `MAJOR.MINOR` version string |
-| `validity_months` | int? | Auto-expiry period (see [Expiration](/usage/expiration)) |
+| `validity_months` | int? | Auto-expiry period (see [Expiration](/guides/expiration)) |
 | `effective_from` / `effective_until` | datetime? | Time window during which the version is effective |
 | `legal_basis` | string? | GDPR Art. 30 — e.g. `consent`, `contract`, `legal_obligation` |
 | `purpose` | string? | GDPR Art. 30 — the processing purpose |
@@ -46,7 +47,7 @@ ConsentType::create([
 
 ::: callout tip "Recommended: record the legal basis"
 For full GDPR Art. 30 record-keeping, set `legal_basis`, `purpose` and `data_controller`. These are
-snapshotted into the [audit trail](/compliance/audit-trail) when consent is given.
+snapshotted into the [audit trail](/concepts/audit-trail) when consent is given.
 :::
 
 ## Required vs optional
@@ -68,7 +69,7 @@ ConsentType::create([
 ## Cookie categories
 
 Consent types with `category = 'cookie'` are the ones rendered by the
-[Cookie Banner](/usage/cookie-banner). Everything else (`category = 'other'`) is managed through your own
+[Cookie Banner](/concepts/cookie-banner). Everything else (`category = 'other'`) is managed through your own
 forms and preference screens.
 
 ```php

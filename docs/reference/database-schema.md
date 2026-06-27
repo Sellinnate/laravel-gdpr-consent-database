@@ -1,6 +1,7 @@
 ---
 title: "Database Schema"
 description: "Tables created by the package."
+type: reference
 ---
 
 # Database Schema
@@ -62,7 +63,7 @@ Anonymous visitor records, keyed by session id (technical cookie code).
 
 ## `consent_audit_logs`
 
-The append-only, immutable audit trail. See [Audit Trail](/compliance/audit-trail).
+The append-only, immutable audit trail. See [Audit Trail](/concepts/audit-trail).
 
 | Column | Type | Notes |
 |---|---|---|

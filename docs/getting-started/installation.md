@@ -1,6 +1,7 @@
 ---
 title: "Installation"
 description: "Install and set up the Laravel GDPR Consent Manager package."
+type: guide
 ---
 
 # Installation
@@ -29,7 +30,7 @@ php artisan migrate
 ```
 
 This creates three tables: `consent_types`, `user_consents` and `guest_consents`
-(see **[Core Concepts](/getting-started/concepts)** for what each one stores).
+(see **[Core Concepts](/concepts/architecture)** for what each one stores).
 
 ## 3. Publish the configuration (optional)
 

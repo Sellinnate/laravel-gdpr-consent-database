@@ -1,6 +1,7 @@
 ---
 title: "Quick Start"
 description: "Create your first consent type and record user consent in minutes."
+type: guide
 ---
 
 # Quick Start
@@ -90,6 +91,6 @@ The banner automatically lists every **active** consent type with `category = 'c
 visitor's choices to the package's built-in endpoints.
 
 ::: callout tip "Next"
-Learn the data model and terminology in **[Core Concepts](/getting-started/concepts)**, or customise the
+Learn the data model and terminology in **[Core Concepts](/concepts/architecture)**, or customise the
 look & feel in **[Configuration](/configuration/overview)**.
 :::

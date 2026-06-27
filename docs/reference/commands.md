@@ -1,6 +1,7 @@
 ---
 title: "Artisan Commands"
 description: "Console commands shipped with the package."
+type: reference
 ---
 
 # Artisan Commands

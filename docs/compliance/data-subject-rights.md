@@ -1,6 +1,7 @@
 ---
 title: "Data Subject Rights"
 description: "Access, portability and erasure of consent data."
+type: guide
 ---
 
 # Data Subject Rights

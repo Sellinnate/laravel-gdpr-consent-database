@@ -42,30 +42,40 @@
       "icon": "rocket",
       "collapsible": false,
       "children": [
+        { "title": "What is GDPR consent? (start here)", "path": "/getting-started/what-is-gdpr-consent", "icon": "lightbulb" },
         { "title": "Installation", "path": "/getting-started/installation", "icon": "download" },
-        { "title": "Quick Start", "path": "/getting-started/quick-start", "icon": "play" },
-        { "title": "Core Concepts", "path": "/getting-started/concepts", "icon": "book-open" }
+        { "title": "Quick Start", "path": "/getting-started/quick-start", "icon": "zap" }
       ]
     },
     {
-      "title": "Usage",
-      "icon": "code",
+      "title": "Concepts",
+      "icon": "book-open",
       "children": [
-        { "title": "Consent Types", "path": "/usage/consent-types", "icon": "list" },
-        { "title": "User Consents", "path": "/usage/user-consents", "icon": "user-check" },
-        { "title": "Versioning", "path": "/usage/versioning", "icon": "git-branch" },
-        { "title": "Expiration & Renewal", "path": "/usage/expiration", "icon": "clock" },
-        { "title": "Guest Consents", "path": "/usage/guest-consents", "icon": "users" },
-        { "title": "Cookie Banner", "path": "/usage/cookie-banner", "icon": "cookie" }
+        { "title": "Architecture & data model", "path": "/concepts/architecture", "icon": "layout" },
+        { "title": "Consent types & purposes", "path": "/concepts/consent-types", "icon": "list" },
+        { "title": "Versioning & re-consent", "path": "/concepts/versioning", "icon": "git-branch" },
+        { "title": "The audit trail", "path": "/concepts/audit-trail", "icon": "history" },
+        { "title": "Erasure & pseudonymisation", "path": "/concepts/erasure", "icon": "user-x" },
+        { "title": "IP & data minimisation", "path": "/concepts/data-and-privacy", "icon": "eye-off" },
+        { "title": "Guest consents", "path": "/concepts/guest-consents", "icon": "users" },
+        { "title": "Cookie banner & ePrivacy", "path": "/concepts/cookie-banner", "icon": "cookie" },
+        { "title": "Events & integration", "path": "/concepts/events", "icon": "radio" }
+      ]
+    },
+    {
+      "title": "Guides",
+      "icon": "compass",
+      "children": [
+        { "title": "Recording & checking consent", "path": "/guides/recording-consent", "icon": "user-check" },
+        { "title": "Expiration & renewal", "path": "/guides/expiration", "icon": "clock" }
       ]
     },
     {
       "title": "Compliance",
       "icon": "shield",
       "children": [
-        { "title": "GDPR Mapping", "path": "/compliance/gdpr-mapping", "icon": "scale" },
-        { "title": "Audit Trail", "path": "/compliance/audit-trail", "icon": "history" },
-        { "title": "Data Subject Rights", "path": "/compliance/data-subject-rights", "icon": "user-x" }
+        { "title": "GDPR article mapping", "path": "/compliance/gdpr-mapping", "icon": "scale" },
+        { "title": "Data subject rights", "path": "/compliance/data-subject-rights", "icon": "file-text" }
       ]
     },
     {
@@ -79,8 +89,8 @@
       "title": "Reference",
       "icon": "book",
       "children": [
-        { "title": "Artisan Commands", "path": "/reference/commands", "icon": "terminal" },
-        { "title": "Database Schema", "path": "/reference/database-schema", "icon": "database" }
+        { "title": "Artisan commands", "path": "/reference/commands", "icon": "terminal" },
+        { "title": "Database schema", "path": "/reference/database-schema", "icon": "database" }
       ]
     },
     { "title": "GitHub", "path": "https://github.com/sellinnate/laravel-gdpr-consent-database", "icon": "github", "external": true }

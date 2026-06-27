@@ -1,6 +1,7 @@
 ---
 title: "Configuration Overview"
 description: "Every configuration option for the cookie banner and package behaviour."
+type: reference
 ---
 
 # Configuration Overview

@@ -1,6 +1,7 @@
 ---
 title: "Laravel GDPR Consent Manager"
 description: "Enterprise-grade GDPR consent management for Laravel applications."
+type: concept
 ---
 
 ![Laravel GDPR Consent Manager](/assets/images/banner.png)
@@ -11,10 +12,21 @@ description: "Enterprise-grade GDPR consent management for Laravel applications.
 Laravel applications: typed consents, versioning, expiration, guest (cookie-based) consents, an immutable
 audit trail and a fully customisable cookie banner.
 
-::: callout tip "New here?"
-Start with **[Installation](/getting-started/installation)**, then follow the
-**[Quick Start](/getting-started/quick-start)**. If you want to understand the data model first, read
-**[Core Concepts](/getting-started/concepts)**.
+::: callout tip "New here? Start at zero."
+Never dealt with GDPR consent before? Read **[What is GDPR consent? (start here)](/getting-started/what-is-gdpr-consent)** —
+it explains the law and the mental model from scratch, no prior knowledge assumed. Then
+**[Installation](/getting-started/installation)** → **[Quick Start](/getting-started/quick-start)**.
+:::
+
+## How these docs are organised
+
+::: card "Find what you need"
+- **[Getting Started](/getting-started/what-is-gdpr-consent)** — from zero to your first recorded consent.
+- **[Concepts](/concepts/architecture)** — *how it works and why*, mapped to the GDPR articles behind each
+  feature (data model, versioning, the audit trail, erasure, cookies, IP minimisation, events).
+- **[Guides](/guides/recording-consent)** — task-focused recipes you can copy-paste.
+- **[Compliance](/compliance/gdpr-mapping)** — the article-by-article mapping and data-subject rights.
+- **[Reference](/reference/commands)** — config, commands and the database schema.
 :::
 
 ## Why this package

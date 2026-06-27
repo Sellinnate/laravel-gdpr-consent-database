@@ -1,6 +1,7 @@
 ---
 title: "User Consents"
 description: "Grant, check and revoke consent on any model."
+type: guide
 ---
 
 # User Consents
@@ -36,7 +37,7 @@ $user->giveConsent('marketing-emails', [], 6);
 - **supersedes** any existing active consent for that group (you always have exactly one active consent
   per type);
 - captures `ip_address`, `user_agent`, the `consent_version` and the timestamp;
-- writes an immutable [audit-trail](/compliance/audit-trail) entry;
+- writes an immutable [audit-trail](/concepts/audit-trail) entry;
 - runs in a database transaction.
 
 ::: callout warning "Retired purposes are rejected"
@@ -95,7 +96,7 @@ Every action is recorded immutably:
 $user->consentAuditLogs(); // Collection<ConsentAuditLog>, most recent first
 ```
 
-See [Audit Trail](/compliance/audit-trail) for the full picture.
+See [Audit Trail](/concepts/audit-trail) for the full picture.
 
 ## Method reference
 

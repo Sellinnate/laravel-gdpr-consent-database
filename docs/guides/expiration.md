@@ -1,6 +1,7 @@
 ---
 title: "Expiration & Renewal"
 description: "Time-limited consents and periodic re-consent."
+type: guide
 ---
 
 # Expiration & Renewal
