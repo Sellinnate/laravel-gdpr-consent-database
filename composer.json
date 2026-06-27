@@ -29,7 +29,7 @@
         "illuminate/contracts": "^11.0||^12.0"
     },
     "require-dev": {
-        "larastan/larastan": "^3.0",
+        "larastan/larastan": "^3.10",
         "laravel/pint": "^1.14",
         "nunomaduro/collision": "^8.1.1||^7.10.0",
         "orchestra/testbench": "^10.0.0||^9.0.0",

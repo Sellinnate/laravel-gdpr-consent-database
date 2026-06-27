@@ -20,11 +20,13 @@ class AnonymizeSubjectCommand extends Command
 
     public function handle(ConsentAnonymizer $anonymizer): int
     {
-        $type = (string) $this->argument('type');
-        $id = (string) $this->argument('id');
         $token = $this->option('token');
 
-        $result = $anonymizer->anonymize($type, $id, is_string($token) ? $token : null);
+        $result = $anonymizer->anonymize(
+            $this->argument('type'),
+            $this->argument('id'),
+            is_string($token) ? $token : null,
+        );
 
         $this->info('Subject anonymised.');
         $this->table(

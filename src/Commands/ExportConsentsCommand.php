@@ -20,7 +20,7 @@ class ExportConsentsCommand extends Command
 
     public function handle(ConsentExporter $exporter): int
     {
-        $json = $exporter->toJson((string) $this->argument('type'), (string) $this->argument('id'));
+        $json = $exporter->toJson($this->argument('type'), $this->argument('id'));
 
         $path = $this->option('path');
 
