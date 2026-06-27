@@ -2,6 +2,35 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
+## v2.0.0 - unreleased
+
+🚀 Major enterprise release. **Breaking changes** — see [UPGRADE.md](UPGRADE.md).
+
+### Added
+- **Immutable audit trail** (`consent_audit_logs`) recording every consent action — proof of consent for
+  GDPR Art. 7(1), with policy version/URL/hash snapshot.
+- **Right to erasure** via `anonymizeConsents()` and the `gdpr:anonymize-subject` command — pseudonymises a
+  subject while preserving the audit proof (Art. 17).
+- **Access / portability** via `ConsentExporter` and the `gdpr:consents:export` command (Art. 15 / 20).
+- **Domain events**: `ConsentGranted`, `ConsentRevoked`, `ConsentRenewed`, `ConsentExpired`.
+- **`gdpr:consents:expire`** command to close expired consents.
+- **GDPR Art. 30 fields** on consent types: `legal_basis`, `purpose`, `data_controller`.
+- **Configurable IP anonymization** (`privacy.store_ip_address`, `privacy.anonymize_ip`).
+- **Configurable routes** (`routes.enabled` / `prefix` / `name` / `middleware`).
+- **`Consentable`** contract; full static analysis (PHPStan max), mutation testing, and a documentation site.
+
+### Changed
+- **Versioning redesign**: the `slug` is now a stable group identifier (one row per version,
+  `unique(slug, version)`); consent operations are group-aware; no more `LIKE`-based resolution.
+- Consent operations are transactional and enforce a single active consent per group.
+- The cookie banner no longer queries the database from the view (ViewComposer); resolves endpoint URLs from
+  config; ships accessibility (ARIA / keyboard / focus) improvements.
+- `Reject All` now revokes optional cookie consents.
+
+### Fixed
+- Removed test-environment-conditional logic from production code.
+- Robust version parsing; correct expiry-window filtering; honest, behaviour-asserting test suite.
+
 ## v1.0.4 - 2025-06-15
 
 Minor fixes to Cookie Banner. It now integrate links to Cookie Policy and Privacy Policy

@@ -190,6 +190,7 @@ if ($user->hasAllRequiredConsents()) {
     // Get missing required consents
     $missingConsents = $user->getMissingRequiredConsents();
 }
+```
 
 ### Consent Versioning
 
@@ -378,7 +379,7 @@ Make sure to include the CSRF token in your layout:
 
 ## Database Structure
 
-This package creates three main tables:
+This package creates four tables. See the [database schema reference](https://sellinnate.github.io/laravel-gdpr-consent-database/reference/database-schema) for the full breakdown.
 
 ### consent_types
 
@@ -386,16 +387,17 @@ Stores the different types of consent that can be requested from users:
 
 - `id`: Primary key
 - `name`: Name of the consent type
-- `slug`: Unique slug for easy reference
+- `slug`: **Stable** group identifier (not unique on its own — one row per version; see Versioning)
 - `description`: Detailed description of what the user is consenting to
 - `required`: Boolean indicating if this consent is required
-- `active`: Boolean indicating if this consent type is currently active
+- `active`: Boolean indicating if this is the current (active) version of the group
 - `version`: Version string for consent type versioning (default: '1.0')
 - `validity_months`: Number of months the consent remains valid (nullable)
-- `effective_from`: Timestamp when this version becomes effective (nullable)
-- `effective_until`: Timestamp when this version expires (nullable)
+- `effective_from` / `effective_until`: Effective time window (nullable)
 - `category`: Category of consent ('cookie' or 'other', default: 'other')
-- `metadata`: JSON field for additional data (e.g., legal references)
+- `legal_basis` / `purpose` / `data_controller`: GDPR Art. 30 record-keeping (nullable)
+- `policy_url` / `policy_text_hash`: Snapshot of the policy shown for this version (nullable)
+- `metadata`: JSON field for additional data
 - `timestamps`: Created and updated timestamps
 
 ### user_consents
@@ -426,6 +428,22 @@ Stores guest user information for session-based consent tracking:
 - `timestamps`: Created and updated timestamps
 
 This table works in conjunction with `user_consents` where guest consents are stored using the technical cookie code as the `consentable_id` with `consentable_type` set to the guest consent model.
+
+### consent_audit_logs
+
+An append-only, immutable record of every consent action (your GDPR Art. 7(1) proof):
+
+- `consentable_type` / `consentable_id`: Polymorphic subject
+- `consent_type_id`: FK to the consent type (`nullOnDelete` — proof survives type deletion)
+- `consent_type_slug` / `consent_version`: Snapshot of what was consented to
+- `action`: `granted`, `revoked`, `renewed`, `expired` or `anonymized`
+- `occurred_at`: When the action happened
+- `ip_address` / `user_agent`: Request context (honours IP anonymization config)
+- `policy_url` / `policy_text_hash`: Snapshot of the policy shown
+- `metadata`: Additional data (grant/renew only)
+
+Records cannot be updated or deleted through Eloquent. See the
+[audit trail docs](https://sellinnate.github.io/laravel-gdpr-consent-database/compliance/audit-trail).
 
 ## Extending the Package
 
@@ -487,7 +505,7 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security Vulnerabilities
 
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+Please review [our security policy](SECURITY.md) on how to report security vulnerabilities.
 
 ## Credits
 

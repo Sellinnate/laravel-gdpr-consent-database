@@ -63,11 +63,27 @@ class GuestConsentController extends Controller
      */
     public function savePreferences(Request $request): JsonResponse
     {
+        $request->validate([
+            'consents' => ['array'],
+            'consents.*' => ['boolean'],
+            'technical_cookie_code' => ['nullable', 'string'],
+        ]);
+
         $technicalCookieCode = $this->resolveTechnicalCookieCode($request);
-        /** @var array<string, mixed> $consents */
         $consents = $request->input('consents', []);
+        $consents = is_array($consents) ? $consents : [];
+
+        // Only act on active cookie-category types; ignore any other (or unknown) slug the client
+        // sends, so the banner cannot fabricate consents for non-cookie purposes or crash on a
+        // retired/unknown slug.
+        $allowed = $this->activeCookieConsentTypes()->keyBy('slug');
+        $applied = [];
 
         foreach ($consents as $slug => $granted) {
+            if (! $allowed->has($slug)) {
+                continue;
+            }
+
             if ($granted) {
                 $this->guestConsentManager->giveConsent((string) $slug, [
                     'source' => 'cookie_banner',
@@ -76,11 +92,13 @@ class GuestConsentController extends Controller
             } else {
                 $this->guestConsentManager->revokeConsent((string) $slug, $technicalCookieCode);
             }
+
+            $applied[$slug] = (bool) $granted;
         }
 
         return response()->json([
             'success' => true,
-            'consents' => $consents,
+            'consents' => $applied,
         ]);
     }
 
@@ -104,7 +122,14 @@ class GuestConsentController extends Controller
         return response()->json([
             'hasAnyConsent' => $hasAnyConsent,
             'consents' => $consentStatus,
-            'consentTypes' => $consentTypes,
+            // Only expose presentation fields — never the internal compliance metadata
+            // (legal_basis, data_controller, policy_text_hash, …) to anonymous visitors.
+            'consentTypes' => $consentTypes->map(fn (ConsentType $type): array => [
+                'slug' => $type->slug,
+                'name' => $type->name,
+                'description' => $type->description,
+                'required' => $type->required,
+            ])->values(),
         ]);
     }
 

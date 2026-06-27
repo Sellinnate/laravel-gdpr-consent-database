@@ -28,9 +28,12 @@ test('cookie banner only shows cookie category consent types', function () {
     $response = $controller->getConsentStatus(new Request);
     $data = $response->getData(true);
 
+    // Only the cookie-category type is returned (the 'other' one is excluded), and the response
+    // exposes only presentation fields — not internal compliance metadata.
     expect($data['consentTypes'])->toHaveCount(1);
     expect($data['consentTypes'][0]['slug'])->toBe('technical-cookies');
-    expect($data['consentTypes'][0]['category'])->toBe('cookie');
+    expect($data['consentTypes'][0])->toHaveKeys(['slug', 'name', 'description', 'required']);
+    expect($data['consentTypes'][0])->not->toHaveKey('category');
 });
 
 test('accept all only processes cookie category consents', function () {

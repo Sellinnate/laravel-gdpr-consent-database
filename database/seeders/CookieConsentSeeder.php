@@ -40,8 +40,9 @@ class CookieConsentSeeder extends Seeder
         ];
 
         foreach ($cookieConsents as $consent) {
+            // Key on (slug, version): a slug identifies a group with one row per version.
             ConsentType::updateOrCreate(
-                ['slug' => $consent['slug']],
+                ['slug' => $consent['slug'], 'version' => $consent['version']],
                 $consent
             );
         }

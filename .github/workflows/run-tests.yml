@@ -21,7 +21,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest, windows-latest]
-        php: [8.4, 8.3]
+        php: [8.4, 8.3, 8.2]
         laravel: [12.*, 11.*]
         stability: [prefer-lowest, prefer-stable]
         include:
@@ -78,6 +78,28 @@ jobs:
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction
 
-      # Gate progressivo: la soglia verrà alzata a 90 nella Fase 5.
       - name: Enforce coverage threshold
-        run: vendor/bin/pest --coverage --min=80 --ci
+        run: vendor/bin/pest --coverage --min=90 --ci
+
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: Mutation testing
+    # Informational: mutation testing is slow; the hard quality gates are tests + 90% coverage.
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, intl, fileinfo
+          coverage: pcov
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Run mutation testing
+        run: vendor/bin/pest --mutate --everything --covered-only --min=85 --ci

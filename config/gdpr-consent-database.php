@@ -16,7 +16,8 @@ return [
         'enabled' => true,
         'prefix' => 'gdpr/consent',
         'name' => 'gdpr.consent.',
-        'middleware' => ['web'],
+        // `web` provides session + CSRF; `throttle` rate-limits the public consent endpoints.
+        'middleware' => ['web', 'throttle:60,1'],
     ],
 
     /*

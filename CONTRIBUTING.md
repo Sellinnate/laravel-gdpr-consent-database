@@ -21,7 +21,7 @@ Every pull request must pass the full quality pipeline locally before being open
 | `composer test-coverage` | Code coverage | ≥ 90% (target) |
 | `composer analyse` | PHPStan (level max + Larastan) | No errors |
 | `composer format` | Laravel Pint code style | No diff |
-| `composer infection` | Mutation testing | MSI ≥ 85% |
+| `composer mutate` | Mutation testing (Pest) | MSI ≥ 85% (informational in CI) |
 
 > **Coverage driver:** coverage requires `pcov` or `xdebug`. With Xdebug installed but not loaded you can run:
 > `XDEBUG_MODE=coverage vendor/bin/pest --coverage`.

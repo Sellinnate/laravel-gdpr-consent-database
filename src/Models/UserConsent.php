@@ -181,6 +181,13 @@ class UserConsent extends Model
             return null;
         }
 
-        return (int) max(0, ceil(now()->diffInDays($this->expires_at, false)));
+        // Computed from raw timestamps to be agnostic to Carbon 2/3 diffInDays sign/float semantics.
+        $seconds = $this->expires_at->getTimestamp() - now()->getTimestamp();
+
+        if ($seconds <= 0) {
+            return 0;
+        }
+
+        return (int) ceil($seconds / 86400);
     }
 }
