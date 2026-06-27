@@ -2,12 +2,44 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
+## v2.1.0 — GDPR-auditor hardening + richer docs - 2026-06-27
+
+### v2.1.0 — GDPR-auditor hardening + richer documentation
+
+Hardening from an independent **GDPR-auditor adversarial review** (code adherence + documentation), plus a
+much deeper documentation site. **Backward compatible.**
+
+#### ✨ Added
+
+- **User-agent minimisation** — new `privacy.store_user_agent` config option (Art. 5(1)(c)).
+- **Fuller subject export (Art. 15/20)** — `ConsentExporter` now includes the consent type's `purpose`,
+  `legal_basis` and `data_controller`, and discloses the `guest_consents` row for guest subjects.
+- **Comprehensive docs site** — a "What is GDPR consent? (start here)" page, deep **Concepts** pages
+  explaining the GDPR reasoning behind each feature, **Guides**, and an honest **Scope & limitations** page.
+
+#### 🔧 Changed / Fixed
+
+- **Stronger erasure (Art. 17)** — anonymisation now rotates the `guest_consents` primary key (`session_id`)
+  to the irreversible pseudonym, removing a residual identifier.
+- Privacy config documents the IP-storage trade-off (Art. 7(1) proof vs Art. 5(1)(c) minimisation).
+- README softened (dropped the "provably compliant" over-claim) and now links the limitations page.
+- **CI** — fixed PHPStan `Command::argument()` typing across PHP versions and the test matrix failing
+  because Composer 2.10 blocks advisory-affected Laravel 11.x.
+
+#### ✅ Quality
+
+116 tests, 96.2% coverage, PHPStan level max (no baseline), Pint, mutation testing; CI matrix
+PHP 8.2–8.4 × Laravel 11/12.
+
+📚 Docs: https://laravel-gdpr-consent.selli.io
+
 ## v2.1.0 - 2026-06-27
 
 Hardening from an independent GDPR-auditor review, plus a much richer documentation site. Backward
 compatible (one erasure-behaviour improvement).
 
 ### Added
+
 - **User-agent minimisation**: new `privacy.store_user_agent` config option (Art. 5(1)(c)).
 - **Fuller subject export (Art. 15/20)**: `ConsentExporter` now includes the consent type's `purpose`,
   `legal_basis` and `data_controller`, and discloses the `guest_consents` row for guest subjects.
@@ -15,6 +47,7 @@ compatible (one erasure-behaviour improvement).
   the GDPR reasoning behind every feature, **Guides**, and an honest **Scope & limitations** page.
 
 ### Changed / Fixed
+
 - **Stronger erasure (Art. 17)**: anonymisation now rotates the `guest_consents` primary key
   (`session_id`) to the pseudonym, removing a residual identifier.
 - Privacy config documents the IP-storage trade-off (proof vs minimisation); README softened to drop the
