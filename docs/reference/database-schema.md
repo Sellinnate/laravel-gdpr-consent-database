@@ -72,7 +72,7 @@ The append-only, immutable audit trail. See [Audit Trail](/concepts/audit-trail)
 | `consent_type_id` | bigint? | FK → `consent_types` (**nullOnDelete** — proof survives) |
 | `consent_type_slug` | string? | Snapshot |
 | `consent_version` | string? | Snapshot |
-| `action` | string | `granted` / `revoked` / `renewed` / `anonymized` |
+| `action` | string | `granted` / `revoked` / `renewed` / `expired` / `anonymized` |
 | `occurred_at` | timestamp | |
 | `ip_address` / `user_agent` | string? | |
 | `policy_url` / `policy_text_hash` | string? | Snapshot of what was shown |

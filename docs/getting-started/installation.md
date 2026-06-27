@@ -29,8 +29,8 @@ php artisan vendor:publish --tag="gdpr-consent-database-migrations"
 php artisan migrate
 ```
 
-This creates three tables: `consent_types`, `user_consents` and `guest_consents`
-(see **[Core Concepts](/concepts/architecture)** for what each one stores).
+This creates **four** tables: `consent_types`, `user_consents`, `guest_consents` and the immutable
+`consent_audit_logs` (see **[Architecture & data model](/concepts/architecture)** for what each one stores).
 
 ## 3. Publish the configuration (optional)
 

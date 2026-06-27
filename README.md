@@ -9,9 +9,11 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/sellinnate/laravel-gdpr-consent-database/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/sellinnate/laravel-gdpr-consent-database/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/selli/laravel-gdpr-consent-database.svg?style=flat-square)](https://packagist.org/packages/selli/laravel-gdpr-consent-database)
 
-A comprehensive Laravel package for managing GDPR consent in your applications. This package provides a complete solution for tracking user consents, managing consent types, versioning, expiration, guest consents, an **immutable audit trail** and **erasure (anonymisation)** — everything you need to build provably GDPR-compliant applications.
+A Laravel package that gives you the **consent backbone** for GDPR compliance: typed and versioned consents, expiration & renewal, guest (cookie-based) consents, an **immutable audit trail** (your Art. 7(1) proof), **erasure by pseudonymisation** (Art. 17), data-subject export (Art. 15/20) and a configurable cookie banner.
 
-> 📚 **Full documentation:** the complete, junior-proof guide lives in the [documentation site](https://laravel-gdpr-consent.selli.io) (sources under [`docs/`](docs)). This README is a quick reference.
+> ⚖️ **Scope & honesty:** this package is a strong *consent-management* layer — not a turnkey "make me compliant" button, and not legal advice. It **records** cookie choices but does **not** itself block third-party scripts (ePrivacy script-gating is your job), has no children's-age mechanism, and audit-log immutability is enforced at the application level (not the database). Read **[Scope & limitations](https://laravel-gdpr-consent.selli.io/compliance/limitations)** before relying on it, and validate your processing with your DPO.
+
+> 📚 **Full documentation:** the complete, junior-proof guide (with the GDPR reasoning behind every feature) lives at **[laravel-gdpr-consent.selli.io](https://laravel-gdpr-consent.selli.io)** (sources under [`docs/`](docs)). This README is a quick reference.
 
 ### Enterprise features
 

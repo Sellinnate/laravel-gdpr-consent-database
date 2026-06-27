@@ -74,6 +74,20 @@ test('guest consent records anonymise the IP too (Phase 4 review BLOCKER)', func
     expect($guest->ip_address)->toBe('127.0.0.0');
 });
 
+test('user agent storage can be disabled for data minimisation', function () {
+    config()->set('gdpr-consent-database.privacy.store_user_agent', false);
+
+    ConsentType::create([
+        'name' => 'Marketing', 'slug' => 'marketing',
+        'required' => false, 'active' => true, 'category' => 'other', 'version' => '1.0',
+    ]);
+
+    $user = TestUser::create(['name' => 'A', 'email' => 'noua@example.com']);
+    $consent = $user->giveConsent('marketing');
+
+    expect($consent->user_agent)->toBeNull();
+});
+
 test('giveConsent stores no IP when storage is disabled', function () {
     config()->set('gdpr-consent-database.privacy.store_ip_address', false);
 

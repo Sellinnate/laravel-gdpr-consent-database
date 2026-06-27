@@ -45,9 +45,41 @@ ConsentType::create([
 | `policy_text_hash` | string? | Hash of the exact policy text shown (proof) |
 | `metadata` | array? | Free-form extra data |
 
-::: callout tip "Recommended: record the legal basis"
-For full GDPR Art. 30 record-keeping, set `legal_basis`, `purpose` and `data_controller`. These are
-snapshotted into the [audit trail](/concepts/audit-trail) when consent is given.
+::: callout tip "Recommended: record the legal basis (Art. 30)"
+For full GDPR Art. 30 record-keeping, populate `legal_basis`, `purpose` and `data_controller`. The
+`policy_url`/`policy_text_hash` are also snapshotted into the [audit trail](/concepts/audit-trail) when
+consent is given (your proof of *what* was shown).
+:::
+
+A fully-documented consent type:
+
+```php
+use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+
+ConsentType::create([
+    'name'            => 'Marketing Emails',
+    'slug'            => 'marketing-emails',
+    'description'     => 'Consent to receive marketing communications by email.',
+    'required'        => false,
+    'active'          => true,
+    'category'        => 'other',
+    'version'         => '1.0',
+
+    // GDPR Art. 30 — records of processing
+    'legal_basis'     => 'consent',
+    'purpose'         => 'Sending newsletters and promotional offers by email.',
+    'data_controller' => 'Acme Srl, Via Roma 1, Milan',
+
+    // Art. 7 / 12–14 — proof of what the subject was shown
+    'policy_url'       => 'https://example.com/privacy/v1',
+    'policy_text_hash' => hash('sha256', file_get_contents(resource_path('legal/privacy-v1.txt'))),
+]);
+```
+
+::: callout note "You populate `policy_text_hash`"
+The package **stores** `policy_text_hash` and snapshots it into the audit trail, but it does **not** compute
+it for you. If you want cryptographic proof of the exact policy text a subject saw, hash that text yourself
+(as above) and set it on the consent type version. See [Scope & limitations](/compliance/limitations).
 :::
 
 ## Required vs optional

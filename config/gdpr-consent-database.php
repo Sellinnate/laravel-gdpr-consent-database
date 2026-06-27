@@ -22,16 +22,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Privacy
+    | Privacy (data minimisation — GDPR Art. 5(1)(c) & Art. 25)
     |--------------------------------------------------------------------------
     |
-    | IP addresses are personal data. You can stop storing them entirely, or
-    | store an anonymised (masked) form: the last octet of an IPv4 address and
-    | the last 80 bits of an IPv6 address are zeroed before persisting.
+    | IP address and user agent are personal data captured as part of the consent
+    | proof. There is a deliberate trade-off:
+    |
+    | - Storing the FULL IP strengthens the Art. 7(1) proof ("from where the
+    |   consent was given") — this is the default.
+    | - Privacy-by-default (Art. 25) may favour minimisation. If your DPIA prefers
+    |   it, enable `anonymize_ip` (masks the last IPv4 octet / the last 80 bits of
+    |   an IPv6 address) or disable `store_ip_address` entirely.
+    |
+    | The user agent is less evidentially critical; set `store_user_agent` to
+    | false to omit it.
     */
     'privacy' => [
         'store_ip_address' => true,
         'anonymize_ip' => false,
+        'store_user_agent' => true,
     ],
 
     'text' => [

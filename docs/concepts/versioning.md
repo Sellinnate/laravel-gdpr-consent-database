@@ -330,8 +330,9 @@ fails when you ask strictly.
 ### `consentsNeedingRenewal()`
 
 When you want the list directly, `consentsNeedingRenewal()` returns the active
-consents that are either **expired** *or* tied to an **outdated version** (it
-inspects each consent's `needsRenewal()`):
+consents that are either **expired** *or* tied to an **outdated version** — for
+each held consent it resolves the group's current version and flags the consent
+when it has expired or its `consent_version` differs from that current version:
 
 ```php
 $dueForRenewal = $user->consentsNeedingRenewal(); // Collection<UserConsent>

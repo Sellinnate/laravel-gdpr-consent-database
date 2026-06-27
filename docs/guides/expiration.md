@@ -6,13 +6,22 @@ type: guide
 
 # Expiration & Renewal
 
-Some consents should not last forever. The package supports validity periods and automatic expiry.
+Some consents should not last forever. The package lets you set validity periods so consent is re-collected
+periodically — good practice for marketing/analytics consents.
 
-## Setting a validity period
+::: callout note "Consent never expires unless you opt in"
+By **default** consents do not expire (`validity_months` is null). You decide the cadence per consent type,
+and you [schedule the expire command](#step-3-schedule-the-cleanup) to close expired records. A common
+choice for marketing consent is **6–13 months**; confirm the right period with your DPO.
+:::
+
+## Step 1 — Set a validity period
 
 Set `validity_months` on the consent type; consents then receive an `expires_at` automatically.
 
 ```php
+use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+
 ConsentType::create([
     'name' => 'Marketing Emails',
     'slug' => 'marketing-emails',
@@ -23,6 +32,7 @@ ConsentType::create([
     'validity_months' => 12, // valid for 12 months
 ]);
 
+$user = auth()->user();
 $user->giveConsent('marketing-emails');             // expires in 12 months
 $user->giveConsent('marketing-emails', [], 6);      // override: expires in 6 months
 ```
@@ -69,3 +79,30 @@ This supersedes the expired consent with a fresh one for the current version, re
 $user->expiredConsents();        // Collection<UserConsent>
 $user->consentsNeedingRenewal(); // expired OR outdated-version consents
 ```
+
+## Step 3 — Schedule the cleanup
+
+An expired consent is *already* treated as inactive by `hasConsent()`/`activeConsents()`. To also **close**
+it formally — mark it ungranted, write an `expired` [audit entry](/concepts/audit-trail) and dispatch the
+`ConsentExpired` [event](/concepts/events) (e.g. to trigger a re-consent email) — run the expire command on a
+schedule:
+
+```bash
+php artisan gdpr:consents:expire
+```
+
+Schedule it daily. On Laravel 11+ (`routes/console.php`):
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('gdpr:consents:expire')->daily();
+```
+
+Or on Laravel 10 (`app/Console/Kernel.php`):
+
+```php
+$schedule->command('gdpr:consents:expire')->daily();
+```
+
+The command is idempotent — already-closed consents are skipped — so running it more often is harmless.

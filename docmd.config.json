@@ -75,7 +75,8 @@
       "icon": "shield",
       "children": [
         { "title": "GDPR article mapping", "path": "/compliance/gdpr-mapping", "icon": "scale" },
-        { "title": "Data subject rights", "path": "/compliance/data-subject-rights", "icon": "file-text" }
+        { "title": "Data subject rights", "path": "/compliance/data-subject-rights", "icon": "file-text" },
+        { "title": "Scope & limitations", "path": "/compliance/limitations", "icon": "alert-octagon" }
       ]
     },
     {

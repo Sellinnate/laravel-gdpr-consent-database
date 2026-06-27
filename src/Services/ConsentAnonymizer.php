@@ -56,11 +56,14 @@ class ConsentAnonymizer
                     'metadata' => null,
                 ]);
 
-            // The subject may itself be a GuestConsent, whose own row (keyed by session_id) holds
-            // identifying data. Scrub it so erasure is complete and the row cannot be re-linked.
+            // The subject may itself be a GuestConsent, whose own row holds identifying data AND is
+            // keyed by `session_id` (the live technical-cookie value — itself an identifier). Scrub
+            // the data and rotate the key to the pseudonym so no residual identifier remains and the
+            // row stays consistently linked to the (already re-keyed) child records.
             DB::table('guest_consents')
                 ->where('session_id', $id)
                 ->update([
+                    'session_id' => $token,
                     'ip_address' => null,
                     'user_agent' => null,
                     'metadata' => null,

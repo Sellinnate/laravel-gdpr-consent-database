@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Selli\LaravelGdprConsentDatabase\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentAuditLog;
 use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 
@@ -31,6 +32,10 @@ class ConsentExporter
             ->get()
             ->map(fn (UserConsent $consent): array => [
                 'consent_type' => $consent->consentType?->slug,
+                'consent_name' => $consent->consentType?->name,
+                'purpose' => $consent->consentType?->purpose,
+                'legal_basis' => $consent->consentType?->legal_basis,
+                'data_controller' => $consent->consentType?->data_controller,
                 'consent_version' => $consent->consent_version,
                 'granted' => $consent->granted,
                 'granted_at' => $consent->granted_at?->toIso8601String(),
@@ -60,11 +65,28 @@ class ConsentExporter
             ])
             ->all();
 
-        return [
+        $export = [
             'subject' => ['type' => $consentableType, 'id' => $id],
             'consents' => $consents,
             'audit_trail' => $audit,
         ];
+
+        // When the subject is a guest, its own row (keyed by the technical-cookie session id) holds
+        // personal data the controller must also disclose for an Art. 15 access request.
+        $guest = DB::table('guest_consents')->where('session_id', $id)->first();
+
+        if ($guest !== null) {
+            $metadata = $guest->metadata ?? null;
+
+            $export['guest'] = [
+                'session_id' => $guest->session_id,
+                'ip_address' => $guest->ip_address,
+                'user_agent' => $guest->user_agent,
+                'metadata' => is_string($metadata) ? json_decode($metadata, true) : $metadata,
+            ];
+        }
+
+        return $export;
     }
 
     /**

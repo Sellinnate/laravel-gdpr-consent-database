@@ -66,17 +66,37 @@ php artisan vendor:publish --tag="gdpr-consent-database-views"
 
 It is published to `resources/views/vendor/gdpr-consent-database/cookie-banner.blade.php`.
 
-## ePrivacy note: strictly-necessary cookies
+## ePrivacy: you must block non-essential scripts yourself
 
-Under the ePrivacy Directive, strictly-necessary cookies do not require consent and **non-essential cookies
-must be blocked until the visitor opts in**. This package records the visitor's *choice*; it does not, by
-itself, block third-party scripts. Gate your non-essential scripts on the consent state, for example:
+::: callout warning "The package records the choice — it does NOT block scripts"
+Under the ePrivacy Directive, strictly-necessary cookies do not require consent, and **non-essential
+cookies/trackers must not fire before the visitor opts in**. This package **records** the visitor's choice;
+it does **not** load or block any third-party script. Gating your scripts on the recorded choice is *your*
+responsibility (see [Scope & limitations](/compliance/limitations)).
+:::
+
+The banner's audience is usually **anonymous visitors**, so gate cookie scripts on the **guest** consent
+state via the `GuestConsentManager`, not on `auth()->user()` (which is null for guests):
 
 ```blade
-@if($user?->hasConsent('analytics-cookies'))
-    <!-- analytics script -->
+@php
+    use Selli\LaravelGdprConsentDatabase\Services\GuestConsentManager;
+    // The session id the banner persists in the `gdpr_session_id` cookie.
+    $sessionId = request()->cookie('gdpr_session_id');
+    $analyticsAllowed = app(GuestConsentManager::class)->hasConsent('analytics-cookies', $sessionId);
+@endphp
+
+@if($analyticsAllowed)
+    <!-- analytics script — only rendered after the visitor opted in -->
 @endif
 ```
+
+For a logged-in user you can instead check the model directly: `@if(auth()->user()?->hasConsent('analytics-cookies'))`.
+
+::: callout tip "Client-side gating"
+After a choice is saved, the banner's JavaScript exposes the current state on `window.gdprCurrentConsents`
+(a `{ slug: bool }` map). You can read it to inject tags client-side without a page reload.
+:::
 
 ## Accessibility
 

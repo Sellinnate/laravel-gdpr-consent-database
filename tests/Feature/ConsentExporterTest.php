@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
+use Selli\LaravelGdprConsentDatabase\Models\GuestConsent;
 use Selli\LaravelGdprConsentDatabase\Services\ConsentExporter;
+use Selli\LaravelGdprConsentDatabase\Services\GuestConsentManager;
 use Selli\LaravelGdprConsentDatabase\Tests\Models\TestUser;
 
 beforeEach(function () {
@@ -15,7 +17,36 @@ beforeEach(function () {
         'category' => 'other',
         'version' => '1.0',
         'policy_url' => 'https://example.com/policy',
+        'legal_basis' => 'consent',
+        'purpose' => 'Marketing communications',
+        'data_controller' => 'Acme Srl',
     ]);
+});
+
+test('the export includes the consent type purpose and legal basis (Art. 30)', function () {
+    $user = TestUser::create(['name' => 'A', 'email' => 'art30@example.com']);
+    $user->giveConsent('marketing');
+
+    $export = app(ConsentExporter::class)->exportModel($user);
+
+    expect($export['consents'][0])->toMatchArray([
+        'purpose' => 'Marketing communications',
+        'legal_basis' => 'consent',
+        'data_controller' => 'Acme Srl',
+    ]);
+});
+
+test('the export discloses the guest_consents row for a guest subject (Art. 15)', function () {
+    app(GuestConsentManager::class)->giveConsent('marketing', [], null, 'export-guest-session');
+
+    $export = app(ConsentExporter::class)->export(
+        (new GuestConsent)->getMorphClass(),
+        'export-guest-session',
+    );
+
+    expect($export)->toHaveKey('guest');
+    expect($export['guest']['session_id'])->toBe('export-guest-session');
+    expect($export['guest'])->toHaveKeys(['ip_address', 'user_agent', 'metadata']);
 });
 
 test('the exporter returns a subject\'s consents and audit trail', function () {

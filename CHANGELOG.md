@@ -2,6 +2,26 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
+## v2.1.0 - 2026-06-27
+
+Hardening from an independent GDPR-auditor review, plus a much richer documentation site. Backward
+compatible (one erasure-behaviour improvement).
+
+### Added
+- **User-agent minimisation**: new `privacy.store_user_agent` config option (Art. 5(1)(c)).
+- **Fuller subject export (Art. 15/20)**: `ConsentExporter` now includes the consent type's `purpose`,
+  `legal_basis` and `data_controller`, and discloses the `guest_consents` row for guest subjects.
+- Comprehensive docs site: a "What is GDPR consent? (start here)" page, deep **Concepts** pages explaining
+  the GDPR reasoning behind every feature, **Guides**, and an honest **Scope & limitations** page.
+
+### Changed / Fixed
+- **Stronger erasure (Art. 17)**: anonymisation now rotates the `guest_consents` primary key
+  (`session_id`) to the pseudonym, removing a residual identifier.
+- Privacy config documents the IP-storage trade-off (proof vs minimisation); README softened to drop the
+  "provably compliant" over-claim and link the limitations page.
+- **CI**: fixed PHPStan failure on `Command::argument()` typing (version-robust trait) and the test matrix
+  failing because Composer 2.10 blocks advisory-affected Laravel 11.x.
+
 ## v2.0.0 - 2026-06-27
 
 🚀 Major enterprise release. **Breaking changes** — see [UPGRADE.md](UPGRADE.md).

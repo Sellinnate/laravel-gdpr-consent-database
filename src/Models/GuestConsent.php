@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use Selli\LaravelGdprConsentDatabase\Contracts\Consentable;
 use Selli\LaravelGdprConsentDatabase\Database\Factories\GuestConsentFactory;
 use Selli\LaravelGdprConsentDatabase\Support\IpAddress;
+use Selli\LaravelGdprConsentDatabase\Support\UserAgent;
 use Selli\LaravelGdprConsentDatabase\Traits\HasGdprConsents;
 
 /**
@@ -91,7 +92,7 @@ class GuestConsent extends Model implements Consentable
             ['session_id' => $sessionId],
             [
                 'ip_address' => IpAddress::forStorage(request()->ip()),
-                'user_agent' => request()->userAgent(),
+                'user_agent' => UserAgent::forStorage(request()->userAgent()),
                 'metadata' => [],
             ]
         );

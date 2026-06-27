@@ -86,12 +86,17 @@ test('anonymising a guest scrubs the guest_consents row itself (Phase 2 review)'
     // Sanity: the guest row holds identifying data before erasure.
     expect($guest->metadata)->not->toBeNull();
 
-    $guest->anonymizeConsents();
+    $result = $guest->anonymizeConsents();
 
-    $guest->refresh();
-    expect($guest->ip_address)->toBeNull();
-    expect($guest->user_agent)->toBeNull();
-    expect($guest->metadata)->toBeNull();
+    // The original session id (a live identifier) must no longer exist...
+    expect(GuestConsent::find($sessionId))->toBeNull();
+
+    // ...the row now lives under the irreversible pseudonym, fully scrubbed.
+    $anonymised = GuestConsent::find($result['token']);
+    expect($anonymised)->not->toBeNull();
+    expect($anonymised->ip_address)->toBeNull();
+    expect($anonymised->user_agent)->toBeNull();
+    expect($anonymised->metadata)->toBeNull();
 });
 
 test('anonymisation clears personal data stored in consent metadata (Phase 2 review)', function () {

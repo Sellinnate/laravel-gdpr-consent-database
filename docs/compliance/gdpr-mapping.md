@@ -15,17 +15,24 @@ application compliant on its own. Always validate your processing with your DPO 
 
 ## Coverage
 
-| GDPR article | Requirement | How the package helps |
-|---|---|---|
-| **Art. 4(11)** | Consent must be freely given, specific, informed, unambiguous | Typed, per-purpose consents; the banner has no pre-ticked optional boxes |
-| **Art. 7(1)** | You must be able to **demonstrate** consent | Immutable [audit trail](/concepts/audit-trail) with version + policy snapshot |
-| **Art. 7(3)** | Withdrawal as easy as giving consent | `revokeConsent()`; banner "Reject All" revokes optional cookies |
-| **Art. 8** | Children's consent | Store age-verification context in `metadata` / `legal_basis` |
-| **Art. 15** | Right of access | Export a subject's consents and audit trail (see [Data Subject Rights](/compliance/data-subject-rights)) |
-| **Art. 17** | Right to erasure | `anonymizeConsents()` / `gdpr:anonymize-subject` — pseudonymise while keeping proof |
-| **Art. 20** | Data portability | Audit trail and consents are plain Eloquent models, easily serialised to JSON/CSV |
-| **Art. 30** | Records of processing activities | `legal_basis`, `purpose`, `data_controller` on each consent type |
-| **ePrivacy** | Prior consent for non-essential cookies | Cookie banner + script-gating pattern |
+Legend: ✅ the package provides a mechanism · 🟡 partial — you must do part of the work · ⛔ out of scope
+(see [Scope & limitations](/compliance/limitations)).
+
+| GDPR article | Requirement | The package | How |
+|---|---|---|---|
+| **Art. 4(11)** | Consent freely given, specific, informed, unambiguous | ✅ | Typed, per-purpose consents; banner has no pre-ticked optional boxes |
+| **Art. 5(1)(c)** | Data minimisation | ✅ | [IP & user-agent](/concepts/data-and-privacy) can be masked or not stored |
+| **Art. 7(1)** | Demonstrate consent | ✅ | Immutable [audit trail](/concepts/audit-trail) with version + policy snapshot |
+| **Art. 7(3)** | Withdrawal as easy as giving | ✅ | `revokeConsent()`; banner *Reject All* revokes optional cookies |
+| **Art. 8** | Children's consent | ⛔ | **No age-gate or parental-consent mechanism.** Implement age verification yourself; you may record the outcome in consent `metadata`. |
+| **Art. 15** | Right of access | ✅ | [`ConsentExporter`](/compliance/data-subject-rights) exports consents + audit trail (+ the guest row) |
+| **Art. 17** | Right to erasure | ✅ | [`anonymizeConsents()`](/concepts/erasure) — pseudonymise while keeping proof |
+| **Art. 20** | Data portability | ✅ | Structured JSON export via `ConsentExporter::toJson()` |
+| **Art. 21 / 18** | Object / restriction | ⛔ | Out of scope — this package handles consent, not objection/restriction workflows |
+| **Art. 25** | By design & **by default** | 🟡 | Optional consents are off by default; IP/UA minimisation is opt-in (a documented trade-off) |
+| **Art. 30** | Records of processing | 🟡 | `legal_basis`, `purpose`, `data_controller` columns — **you populate them** |
+| **Art. 32** | Security of processing | ✅ | CSRF, rate-limiting (`throttle`), query-builder (no SQLi), input validation |
+| **ePrivacy** | Prior consent for non-essential cookies | 🟡 | The banner **records** the choice; **you must block non-essential scripts** until consent — see [Cookie banner & ePrivacy](/concepts/cookie-banner) |
 
 ## The two pillars
 
