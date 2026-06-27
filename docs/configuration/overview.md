@@ -34,7 +34,27 @@ Control the guest cookie-consent endpoints:
 ```
 
 Set `enabled` to `false` if you want to register your own routes pointing at
-`Selli\LaravelGdprConsentDatabase\Http\Controllers\GuestConsentController`.
+`Selli\LaravelGdprConsentDatabase\Http\Controllers\GuestConsentController`. When routes are disabled, remove
+the `@gdprCookieBanner` directive (it degrades gracefully but its endpoints will not exist).
+
+## `privacy` — IP address handling
+
+IP addresses are personal data. Control how they are stored:
+
+| Key | Default | Description |
+|---|---|---|
+| `store_ip_address` | `true` | Store the IP at all |
+| `anonymize_ip` | `false` | Store a masked IP (IPv4 last octet zeroed, IPv6 last 80 bits zeroed) |
+
+```php
+'privacy' => [
+    'store_ip_address' => true,
+    'anonymize_ip' => false,
+],
+```
+
+This applies everywhere the package stores an IP: user consents, guest consents and the audit trail. Example
+masked values: `203.0.113.42 → 203.0.113.0`, `2001:db8:1234:… → 2001:db8:1234::`.
 
 ## Cookie banner options
 

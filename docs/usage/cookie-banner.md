@@ -77,7 +77,23 @@ itself, block third-party scripts. Gate your non-essential scripts on the consen
 @endif
 ```
 
+## Accessibility
+
+The banner ships with sensible accessibility defaults:
+
+- the banner is a labelled `role="region"` (`aria-labelledby` the title);
+- the close button and the floating settings icon have `aria-label`s;
+- the settings icon is keyboard-operable (`Enter` / `Space`);
+- each cookie checkbox is associated with its description via `aria-describedby`;
+- opening the banner moves keyboard focus into it.
+
+## Privacy
+
+IP addresses captured when consent is recorded honour the [privacy configuration](/configuration/overview):
+you can disable IP storage entirely or store an anonymised (masked) form.
+
 ## Routes
 
-The endpoints are registered automatically under the `gdpr/consent` prefix. They rely on the `web`
-middleware group (session + CSRF), so ensure your banner is rendered within a `web` route.
+The endpoints are registered automatically under the configurable `gdpr/consent` prefix and the banner's
+JavaScript resolves them from the route configuration (so changing the prefix just works). They rely on the
+`web` middleware group (session + CSRF), so ensure your banner is rendered within a `web` route.

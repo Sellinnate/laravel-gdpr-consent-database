@@ -19,6 +19,20 @@ return [
         'middleware' => ['web'],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Privacy
+    |--------------------------------------------------------------------------
+    |
+    | IP addresses are personal data. You can stop storing them entirely, or
+    | store an anonymised (masked) form: the last octet of an IPv4 address and
+    | the last 80 bits of an IPv6 address are zeroed before persisting.
+    */
+    'privacy' => [
+        'store_ip_address' => true,
+        'anonymize_ip' => false,
+    ],
+
     'text' => [
         'title' => 'Cookie Consent',
         'message' => 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. For additional information, please see our <a href="cookie-policy" target="_blank">Cookie Policy</a> and <a href="privacy-policy" target="_blank">Privacy Policy</a>.',

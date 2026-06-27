@@ -16,6 +16,7 @@ use Selli\LaravelGdprConsentDatabase\Models\ConsentAuditLog;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 use Selli\LaravelGdprConsentDatabase\Services\ConsentAnonymizer;
+use Selli\LaravelGdprConsentDatabase\Support\IpAddress;
 
 /**
  * Adds GDPR consent management to an Eloquent model.
@@ -184,7 +185,7 @@ trait HasGdprConsents
                 'granted' => true,
                 'granted_at' => now(),
                 'expires_at' => $expiresAt,
-                'ip_address' => request()->ip(),
+                'ip_address' => IpAddress::forStorage(request()->ip()),
                 'user_agent' => request()->userAgent(),
                 'metadata' => $metadata,
             ]);
@@ -336,7 +337,7 @@ trait HasGdprConsents
             'consent_version' => $consent->consent_version,
             'action' => $action,
             'occurred_at' => now(),
-            'ip_address' => request()->ip(),
+            'ip_address' => IpAddress::forStorage(request()->ip()),
             'user_agent' => request()->userAgent(),
             'policy_url' => $consentType?->policy_url,
             'policy_text_hash' => $consentType?->policy_text_hash,

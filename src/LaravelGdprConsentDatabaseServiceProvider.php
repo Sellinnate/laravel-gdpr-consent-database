@@ -6,9 +6,11 @@ namespace Selli\LaravelGdprConsentDatabase;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Selli\LaravelGdprConsentDatabase\Commands\AnonymizeSubjectCommand;
 use Selli\LaravelGdprConsentDatabase\Commands\ExpireConsentsCommand;
 use Selli\LaravelGdprConsentDatabase\Commands\ExportConsentsCommand;
+use Selli\LaravelGdprConsentDatabase\Http\ViewComposers\CookieBannerComposer;
 use Selli\LaravelGdprConsentDatabase\Services\GuestConsentManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -51,6 +53,11 @@ class LaravelGdprConsentDatabaseServiceProvider extends PackageServiceProvider
     {
         $this->registerBladeDirectives();
         $this->registerRoutes();
+
+        View::composer(
+            'gdpr-consent-database::cookie-banner',
+            CookieBannerComposer::class,
+        );
     }
 
     /**

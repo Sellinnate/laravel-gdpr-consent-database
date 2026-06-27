@@ -1,9 +1,10 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<div id="gdpr-cookie-banner" class="gdpr-cookie-banner" style="">
+<div id="gdpr-cookie-banner" class="gdpr-cookie-banner" style="" role="region"
+     aria-labelledby="gdpr-banner-title">
     <div class="gdpr-banner-content">
         <div class="gdpr-banner-text">
-            <h3>{{ $title ?? config('gdpr-consent-database.text.title', 'Cookie Consent') }}</h3>
-            <p>{!! $message ?? config('gdpr-consent-database.text.message', 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. For additional information, please see our <a href="cookie-policy">Cookie Policy</a> and <a href="privacy-policy">Privacy Policy</a>.</p>')!!}
+            <h3 id="gdpr-banner-title">{{ $title ?? config('gdpr-consent-database.text.title', 'Cookie Consent') }}</h3>
+            <p>{!! $message ?? config('gdpr-consent-database.text.message', 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. For additional information, please see our <a href="cookie-policy">Cookie Policy</a> and <a href="privacy-policy">Privacy Policy</a>.') !!}</p>
         </div>
         
         <div class="gdpr-banner-actions">
@@ -21,7 +22,8 @@
                 {{ $acceptText ?? config('gdpr-consent-database.text.accept_text', 'Accept All') }}
             </button>
             
-            <button type="button" class="gdpr-btn gdpr-btn-close" onclick="gdprHideBanner()" title="Close">
+            <button type="button" class="gdpr-btn gdpr-btn-close" onclick="gdprHideBanner()" title="Close"
+                    aria-label="Close cookie banner">
                 ×
             </button>
         </div>
@@ -31,20 +33,23 @@
         <div id="gdpr-cookie-details" class="gdpr-cookie-details" style="display: none;">
             <h4>{{ config('gdpr-consent-database.text.details_header', 'Cookie Categories') }}</h4>
             <div class="gdpr-consent-categories">
-                @foreach(Selli\LaravelGdprConsentDatabase\Models\ConsentType::cookies() as $consentType)
+                @foreach($consentTypes as $consentType)
                     <div class="gdpr-consent-item">
                         <label class="gdpr-consent-label">
-                            <input type="checkbox" 
-                                   name="consent[{{ $consentType->slug }}]" 
+                            <input type="checkbox"
+                                   name="consent[{{ $consentType->slug }}]"
                                    value="1"
                                    {{ $consentType->required ? 'checked disabled' : '' }}
+                                   @if($consentType->description) aria-describedby="gdpr-desc-{{ $consentType->slug }}" @endif
                                    class="gdpr-consent-checkbox">
                             <span class="gdpr-consent-name">{{ $consentType->name }}</span>
                             @if($consentType->required)
                                 <span class="gdpr-required">{{ config('gdpr-consent-database.text.required_text', '(Required)') }}</span>
                             @endif
                         </label>
-                        <p class="gdpr-consent-description">{{ $consentType->description }}</p>
+                        @if($consentType->description)
+                            <p id="gdpr-desc-{{ $consentType->slug }}" class="gdpr-consent-description">{{ $consentType->description }}</p>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -68,27 +73,33 @@
     $iconDisplayClass = 'gdpr-icon-' . str_replace('-', '_', $iconDisplay);
 @endphp
 
-<div id="gdpr-consent-icon" class="gdpr-consent-icon {{ $iconPositionClass }} {{ $iconDisplayClass }}" style="display: none;" onclick="gdprShowBanner()">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+<div id="gdpr-consent-icon" class="gdpr-consent-icon {{ $iconPositionClass }} {{ $iconDisplayClass }}" style="display: none;"
+     role="button" tabindex="0" aria-label="{{ config('gdpr-consent-database.text.icon_text', 'Cookie Settings') }}"
+     onclick="gdprShowBanner()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gdprShowBanner();}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
         <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
     </svg>
     <span>{{ config('gdpr-consent-database.text.icon_text', 'Cookie Settings') }}</span>
 </div>
 
+@php
+    use Selli\LaravelGdprConsentDatabase\Support\Css;
+    $c = fn (string $key, string $default): string => Css::color((string) config('gdpr-consent-database.'.$key, $default), $default);
+@endphp
 <style>
 :root {
-    --gdpr-banner-bg: {{ config('gdpr-consent-database.colors.banner_background', '#fff') }};
-    --gdpr-banner-border: {{ config('gdpr-consent-database.colors.banner_border', '#ddd') }};
-    --gdpr-banner-shadow: {{ config('gdpr-consent-database.colors.banner_shadow', 'rgba(0,0,0,0.1)') }};
-    --gdpr-text-primary: {{ config('gdpr-consent-database.colors.text_primary', '#333') }};
-    --gdpr-text-secondary: {{ config('gdpr-consent-database.colors.text_secondary', '#666') }};
-    --gdpr-btn-primary-bg: {{ config('gdpr-consent-database.colors.button_primary_bg', '#007cba') }};
-    --gdpr-btn-primary-hover: {{ config('gdpr-consent-database.colors.button_primary_hover', '#005a87') }};
-    --gdpr-btn-secondary-bg: {{ config('gdpr-consent-database.colors.button_secondary_bg', '#f1f1f1') }};
-    --gdpr-btn-secondary-hover: {{ config('gdpr-consent-database.colors.button_secondary_hover', '#e1e1e1') }};
-    --gdpr-details-border: {{ config('gdpr-consent-database.colors.details_border', '#eee') }};
-    --gdpr-icon-bg: {{ config('gdpr-consent-database.icon.background', '#007cba') }};
-    --gdpr-icon-hover: {{ config('gdpr-consent-database.icon.background_hover', '#005a87') }};
+    --gdpr-banner-bg: {{ $c('colors.banner_background', '#fff') }};
+    --gdpr-banner-border: {{ $c('colors.banner_border', '#ddd') }};
+    --gdpr-banner-shadow: {{ $c('colors.banner_shadow', 'rgba(0,0,0,0.1)') }};
+    --gdpr-text-primary: {{ $c('colors.text_primary', '#333') }};
+    --gdpr-text-secondary: {{ $c('colors.text_secondary', '#666') }};
+    --gdpr-btn-primary-bg: {{ $c('colors.button_primary_bg', '#007cba') }};
+    --gdpr-btn-primary-hover: {{ $c('colors.button_primary_hover', '#005a87') }};
+    --gdpr-btn-secondary-bg: {{ $c('colors.button_secondary_bg', '#f1f1f1') }};
+    --gdpr-btn-secondary-hover: {{ $c('colors.button_secondary_hover', '#e1e1e1') }};
+    --gdpr-details-border: {{ $c('colors.details_border', '#eee') }};
+    --gdpr-icon-bg: {{ $c('icon.background', '#007cba') }};
+    --gdpr-icon-hover: {{ $c('icon.background_hover', '#005a87') }};
 }
 
 .gdpr-cookie-banner {
@@ -292,7 +303,22 @@
 }
 </style>
 
+@php
+    $gdprRouteName = config('gdpr-consent-database.routes.name', 'gdpr.consent.');
+    // Guard against routes being disabled (config routes.enabled=false): resolving an unregistered
+    // named route would throw and 500 the whole page. Fall back to an empty object instead.
+    $gdprUrls = \Illuminate\Support\Facades\Route::has($gdprRouteName.'accept-all')
+        ? [
+            'acceptAll' => route($gdprRouteName.'accept-all'),
+            'rejectAll' => route($gdprRouteName.'reject-all'),
+            'savePreferences' => route($gdprRouteName.'save-preferences'),
+            'status' => route($gdprRouteName.'status'),
+        ]
+        : new \stdClass;
+@endphp
 <script>
+const gdprUrls = @json($gdprUrls);
+
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -311,18 +337,19 @@ function getTechnicalCookieCode() {
 }
 
 function generateSessionId() {
-    return 'gdpr_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return 'gdpr_' + window.crypto.randomUUID();
+    }
+    return 'gdpr_' + Math.random().toString(36).slice(2, 11) + '_' + Date.now();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("script called");
     const technicalCookieCode = getTechnicalCookieCode();
     setCookie('gdpr_session_id', technicalCookieCode, 30);
     
     if (getCookie('gdpr_consent_given')) {
-        console.log("consent given");
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
-        fetch('/gdpr/consent/status', {
+        fetch(gdprUrls.status, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -339,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    fetch('/gdpr/consent/status', {
+    fetch(gdprUrls.status, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -363,7 +390,7 @@ function gdprAcceptAll() {
     const technicalCookieCode = getTechnicalCookieCode();
     setCookie('gdpr_session_id', technicalCookieCode, 30);
     
-    fetch('/gdpr/consent/accept-all', {
+    fetch(gdprUrls.acceptAll, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -375,7 +402,7 @@ function gdprAcceptAll() {
         setCookie('gdpr_consent_given', 'true', 30);
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status', { 
+            fetch(gdprUrls.status, { 
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
@@ -392,7 +419,7 @@ function gdprRejectAll() {
     const technicalCookieCode = getTechnicalCookieCode();
     setCookie('gdpr_session_id', technicalCookieCode, 30);
     
-    fetch('/gdpr/consent/reject-all', {
+    fetch(gdprUrls.rejectAll, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -404,7 +431,7 @@ function gdprRejectAll() {
         setCookie('gdpr_consent_given', 'true', 30);
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status', { 
+            fetch(gdprUrls.status, { 
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
@@ -437,7 +464,7 @@ function gdprSavePreferences() {
         consents[slug] = checkbox.checked;
     });
     
-    fetch('/gdpr/consent/save-preferences', {
+    fetch(gdprUrls.savePreferences, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -449,7 +476,7 @@ function gdprSavePreferences() {
         setCookie('gdpr_consent_given', 'true', 30);
         document.getElementById('gdpr-cookie-banner').style.display = 'none';
         setTimeout(() => {
-            fetch('/gdpr/consent/status', { 
+            fetch(gdprUrls.status, { 
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
@@ -463,15 +490,19 @@ function gdprSavePreferences() {
 }
 
 function showConsentIcon(data) {
-    console.log("showConsentIcon called");
     document.getElementById('gdpr-consent-icon').style.display = 'flex';
     window.gdprCurrentConsents = data.consents;
 }
 
 function gdprShowBanner() {
-    document.getElementById('gdpr-cookie-banner').style.display = 'block';
+    const banner = document.getElementById('gdpr-cookie-banner');
+    banner.style.display = 'block';
     document.getElementById('gdpr-consent-icon').style.display = 'none';
-    
+
+    // Move keyboard focus into the banner for screen-reader / keyboard users.
+    banner.setAttribute('tabindex', '-1');
+    banner.focus();
+
     if (window.gdprCurrentConsents) {
         Object.keys(window.gdprCurrentConsents).forEach(slug => {
             const checkbox = document.querySelector(`input[name="consent[${slug}]"]`);
