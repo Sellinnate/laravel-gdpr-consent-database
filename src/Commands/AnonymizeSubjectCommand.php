@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Selli\LaravelGdprConsentDatabase\Commands;
 
 use Illuminate\Console\Command;
+use Selli\LaravelGdprConsentDatabase\Commands\Concerns\ResolvesStringArguments;
 use Selli\LaravelGdprConsentDatabase\Services\ConsentAnonymizer;
 
 class AnonymizeSubjectCommand extends Command
 {
+    use ResolvesStringArguments;
+
     /** @var string */
     protected $signature = 'gdpr:anonymize-subject
         {type : The stored consentable type (morph alias or fully-qualified class name)}
@@ -23,8 +26,8 @@ class AnonymizeSubjectCommand extends Command
         $token = $this->option('token');
 
         $result = $anonymizer->anonymize(
-            $this->argument('type'),
-            $this->argument('id'),
+            $this->stringArgument('type'),
+            $this->stringArgument('id'),
             is_string($token) ? $token : null,
         );
 

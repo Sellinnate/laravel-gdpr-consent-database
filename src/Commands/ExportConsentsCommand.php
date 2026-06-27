@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Selli\LaravelGdprConsentDatabase\Commands;
 
 use Illuminate\Console\Command;
+use Selli\LaravelGdprConsentDatabase\Commands\Concerns\ResolvesStringArguments;
 use Selli\LaravelGdprConsentDatabase\Services\ConsentExporter;
 
 class ExportConsentsCommand extends Command
 {
+    use ResolvesStringArguments;
+
     /** @var string */
     protected $signature = 'gdpr:consents:export
         {type : The stored consentable type (morph alias or fully-qualified class name)}
@@ -20,7 +23,7 @@ class ExportConsentsCommand extends Command
 
     public function handle(ConsentExporter $exporter): int
     {
-        $json = $exporter->toJson($this->argument('type'), $this->argument('id'));
+        $json = $exporter->toJson($this->stringArgument('type'), $this->stringArgument('id'));
 
         $path = $this->option('path');
 
