@@ -2,11 +2,50 @@
 
 All notable changes to `laravel-gdpr-consent-database` will be documented in this file.
 
+## v2.0.0 — Enterprise release - 2026-06-27
+
+### 🚀 v2.0.0 — Enterprise release
+
+A major, breaking release that turns the package into an enterprise-grade, provably GDPR-compliant consent toolkit.
+
+> ⚠️ **Breaking changes** — read the [Upgrade Guide](https://github.com/Sellinnate/laravel-gdpr-consent-database/blob/main/UPGRADE.md) before upgrading from 1.x.
+
+#### ✨ Added
+
+- **Immutable audit trail** (`consent_audit_logs`) — proof of consent for GDPR **Art. 7(1)**, with policy version/URL/hash snapshot.
+- **Right to erasure** — `anonymizeConsents()` / `gdpr:anonymize-subject` pseudonymise a subject while preserving proof (**Art. 17**).
+- **Access / portability** — `ConsentExporter` + `gdpr:consents:export` (**Art. 15 / 20**).
+- **Domain events** — `ConsentGranted`, `ConsentRevoked`, `ConsentRenewed`, `ConsentExpired`.
+- **`gdpr:consents:expire`** command to close expired consents.
+- **Art. 30 fields** on consent types — `legal_basis`, `purpose`, `data_controller`.
+- **Configurable IP anonymization** and **configurable routes** (prefix / middleware / throttle).
+- **`Consentable`** contract, full PHPStan (level max, no baseline), mutation testing, and a documentation site.
+
+#### 🔧 Changed
+
+- **Versioning redesign** — `slug` is a stable group key (`unique(slug, version)`), group-aware consent operations, no `LIKE` resolution.
+- Consent operations are transactional with a single active consent per group.
+- Cookie banner: no DB query in the view, config-driven endpoint URLs, accessibility (ARIA / keyboard / focus).
+- `Reject All` now revokes optional cookie consents.
+
+#### 🐛 Fixed
+
+- Removed test-environment-conditional logic from production code; honest, behaviour-asserting test suite.
+- Robust version parsing and expiry-window filtering.
+
+#### ✅ Quality
+
+- 113 tests, **96.4% coverage**, PHPStan level **max** (no baseline), Pint, mutation testing.
+- CI matrix: PHP 8.2/8.3/8.4 × Laravel 11/12.
+
+📚 Docs: https://laravel-gdpr-consent.selli.io
+
 ## v2.0.0 - 2026-06-27
 
 🚀 Major enterprise release. **Breaking changes** — see [UPGRADE.md](UPGRADE.md).
 
 ### Added
+
 - **Immutable audit trail** (`consent_audit_logs`) recording every consent action — proof of consent for
   GDPR Art. 7(1), with policy version/URL/hash snapshot.
 - **Right to erasure** via `anonymizeConsents()` and the `gdpr:anonymize-subject` command — pseudonymises a
@@ -20,6 +59,7 @@ All notable changes to `laravel-gdpr-consent-database` will be documented in thi
 - **`Consentable`** contract; full static analysis (PHPStan max), mutation testing, and a documentation site.
 
 ### Changed
+
 - **Versioning redesign**: the `slug` is now a stable group identifier (one row per version,
   `unique(slug, version)`); consent operations are group-aware; no more `LIKE`-based resolution.
 - Consent operations are transactional and enforce a single active consent per group.
@@ -28,6 +68,7 @@ All notable changes to `laravel-gdpr-consent-database` will be documented in thi
 - `Reject All` now revokes optional cookie consents.
 
 ### Fixed
+
 - Removed test-environment-conditional logic from production code.
 - Robust version parsing; correct expiry-window filtering; honest, behaviour-asserting test suite.
 
