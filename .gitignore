@@ -31,6 +31,7 @@ testbench.yaml
 
 # docmd build output (source lives in /docs, site is generated)
 /site
+/.docmd
 SKILL.md
 /okf
 

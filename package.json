@@ -2,11 +2,10 @@
   "name": "laravel-gdpr-consent-database-docs",
   "version": "1.0.0",
   "private": true,
-  "description": "Documentation site (docmd) for the Laravel GDPR Consent Manager package.",
+  "description": "Documentation site for the selli/laravel-gdpr-consent-database Laravel package (built with docmd).",
   "scripts": {
     "docs:dev": "docmd dev",
-    "docs:build": "docmd build",
-    "docs:validate": "docmd validate"
+    "docs:build": "docmd build"
   },
   "repository": {
     "type": "git",
@@ -14,7 +13,8 @@
   },
   "license": "MIT",
   "type": "commonjs",
-  "devDependencies": {
-    "@docmd/core": "^0.8.9"
+  "homepage": "https://laravel-gdpr-consent.selli.io",
+  "dependencies": {
+    "@mgks/docmd": "^0.8.9"
   }
 }

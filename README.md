@@ -11,7 +11,7 @@
 
 A comprehensive Laravel package for managing GDPR consent in your applications. This package provides a complete solution for tracking user consents, managing consent types, versioning, expiration, guest consents, an **immutable audit trail** and **erasure (anonymisation)** — everything you need to build provably GDPR-compliant applications.
 
-> 📚 **Full documentation:** the complete, junior-proof guide lives in the [documentation site](https://sellinnate.github.io/laravel-gdpr-consent-database) (sources under [`docs/`](docs)). This README is a quick reference.
+> 📚 **Full documentation:** the complete, junior-proof guide lives in the [documentation site](https://laravel-gdpr-consent.selli.io) (sources under [`docs/`](docs)). This README is a quick reference.
 
 ### Enterprise features
 
@@ -379,7 +379,7 @@ Make sure to include the CSRF token in your layout:
 
 ## Database Structure
 
-This package creates four tables. See the [database schema reference](https://sellinnate.github.io/laravel-gdpr-consent-database/reference/database-schema) for the full breakdown.
+This package creates four tables. See the [database schema reference](https://laravel-gdpr-consent.selli.io/reference/database-schema) for the full breakdown.
 
 ### consent_types
 
@@ -443,7 +443,7 @@ An append-only, immutable record of every consent action (your GDPR Art. 7(1) pr
 - `metadata`: Additional data (grant/renew only)
 
 Records cannot be updated or deleted through Eloquent. See the
-[audit trail docs](https://sellinnate.github.io/laravel-gdpr-consent-database/compliance/audit-trail).
+[audit trail docs](https://laravel-gdpr-consent.selli.io/compliance/audit-trail).
 
 ## Extending the Package
 

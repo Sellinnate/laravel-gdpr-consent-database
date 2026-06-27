@@ -1,6 +1,6 @@
 {
   "title": "Laravel GDPR Consent Manager",
-  "url": "https://sellinnate.github.io/laravel-gdpr-consent-database",
+  "url": "https://laravel-gdpr-consent.selli.io",
   "src": "docs",
   "out": "site",
   "engine": "js",
@@ -22,13 +22,13 @@
     },
     "footer": {
       "style": "minimal",
-      "content": "© 2026 Selli — Laravel GDPR Consent Manager. MIT License.",
+      "content": "© 2026 Sellinnate S.r.l. — GDPR Consent Manager for Laravel (MIT).",
       "branding": true
     }
   },
   "theme": {
     "name": "default",
-    "appearance": "system",
+    "appearance": "dark",
     "codeHighlight": true
   },
   "minify": true,
