@@ -45,7 +45,7 @@ test('an exact slug still resolves correctly', function () {
     expect($user->hasConsent('marketing-emails'))->toBeTrue();
 });
 
-test('a versioned slug falls back to the current active version', function () {
+test('a stable slug resolves to the current active version after re-versioning', function () {
     $type = ConsentType::create([
         'name' => 'Privacy Policy',
         'slug' => 'privacy-policy',
@@ -59,10 +59,26 @@ test('a versioned slug falls back to the current active version', function () {
 
     $user = TestUser::create(['name' => 'Versioned', 'email' => 'versioned@example.com']);
 
-    // The versioned slug "privacy-policy-v1-1" resolves to the active current version.
-    $consent = $user->giveConsent('privacy-policy-v1-1');
+    // The stable slug always resolves to the current (active) version of the group.
+    $consent = $user->giveConsent('privacy-policy');
 
     expect($consent->consent_version)->toBe('1.1');
+});
+
+test('giveConsent refuses a retired (inactive) consent type (Phase 2 review)', function () {
+    ConsentType::create([
+        'name' => 'Retired Purpose',
+        'slug' => 'retired',
+        'required' => false,
+        'active' => false, // retired: no effective version
+        'category' => 'other',
+        'version' => '1.0',
+    ]);
+
+    $user = TestUser::create(['name' => 'R', 'email' => 'retired@example.com']);
+
+    expect(fn () => $user->giveConsent('retired'))->toThrow(ModelNotFoundException::class);
+    expect($user->consents()->count())->toBe(0);
 });
 
 test('daysUntilExpiration rounds up sub-day remainders and never returns null for a dated consent', function () {

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Selli\LaravelGdprConsentDatabase\Database\Factories\ConsentTypeFactory;
 
 /**
@@ -19,6 +20,11 @@ use Selli\LaravelGdprConsentDatabase\Database\Factories\ConsentTypeFactory;
  * @property bool $required
  * @property bool $active
  * @property string $category
+ * @property string|null $legal_basis
+ * @property string|null $purpose
+ * @property string|null $data_controller
+ * @property string|null $policy_url
+ * @property string|null $policy_text_hash
  * @property array<string, mixed>|null $metadata
  * @property string $version
  * @property int|null $validity_months
@@ -44,6 +50,11 @@ class ConsentType extends Model
         'required',
         'active',
         'category',
+        'legal_basis',
+        'purpose',
+        'data_controller',
+        'policy_url',
+        'policy_text_hash',
         'metadata',
         'version',
         'validity_months',
@@ -97,45 +108,79 @@ class ConsentType extends Model
     }
 
     /**
-     * Create a new version of this consent type, deactivating the current one.
+     * Create a new version of this consent type.
+     *
+     * The slug is stable across versions (it identifies the consent-type group). The currently
+     * active version(s) of the group are deactivated and a brand-new, active version row is created.
+     * The whole operation is transactional so the "single active version per slug" invariant holds.
      *
      * @param  array<string, mixed>  $attributes  Attributes to override on the new version.
      */
-    public function createNewVersion(array $attributes = []): ConsentType
+    public function createNewVersion(array $attributes = []): static
     {
-        $this->active = false;
-        $this->effective_until = now();
-        $this->save();
+        return DB::transaction(function () use ($attributes): static {
+            $nextVersion = $this->nextVersionNumber();
 
-        $newVersion = $this->nextVersionNumber();
-        $uniqueSlug = $this->slug.'-v'.str_replace('.', '-', $newVersion);
+            // Deactivate every currently-active version of this group.
+            static::query()
+                ->where('slug', $this->slug)
+                ->where('active', true)
+                ->update(['active' => false, 'effective_until' => now()]);
 
-        $newConsentType = $this->replicate(['slug'])->fill([
-            'slug' => $uniqueSlug,
-            'version' => $newVersion,
-            'active' => true,
-            'effective_from' => now(),
-            'effective_until' => null,
-        ]);
+            /** @var static $newConsentType */
+            $newConsentType = $this->replicate();
+            $newConsentType->fill(array_merge([
+                'version' => $nextVersion,
+                'active' => true,
+                'effective_from' => now(),
+                'effective_until' => null,
+            ], $attributes));
+            $newConsentType->save();
 
-        $newConsentType->fill($attributes);
-        $newConsentType->save();
-
-        return $newConsentType;
+            return $newConsentType;
+        });
     }
 
     /**
-     * Compute the next minor version number, robust to missing or extra version segments.
+     * Compute the next minor version number for this consent-type group.
      *
-     * Examples: "1" -> "1.1", "1.0" -> "1.1", "2.4" -> "2.5", "3.0.7" -> "3.1".
+     * Derived from the highest existing version sharing this slug (not just `$this`), so it is
+     * robust to being called on an older version and never collides with an existing one.
+     * Non-numeric segments are treated as 0. Examples within a group:
+     * {"1.0"} -> "1.1", {"1.0","1.1"} -> "1.2", {"2.4"} -> "2.5", {"3.0.7"} -> "3.1".
      */
     public function nextVersionNumber(): string
     {
-        $versionParts = explode('.', (string) $this->version);
-        $major = $versionParts[0] !== '' ? $versionParts[0] : '1';
-        $minor = (int) ($versionParts[1] ?? '0');
+        $maxMajor = 0;
+        $maxMinor = 0;
 
-        return $major.'.'.($minor + 1);
+        foreach (static::query()->where('slug', $this->slug)->get() as $sibling) {
+            $parts = explode('.', $sibling->version);
+            $major = (int) $parts[0];
+            $minor = (int) ($parts[1] ?? '0');
+
+            if ($major > $maxMajor || ($major === $maxMajor && $minor > $maxMinor)) {
+                $maxMajor = $major;
+                $maxMinor = $minor;
+            }
+        }
+
+        $maxMajor = max($maxMajor, 1);
+
+        return $maxMajor.'.'.($maxMinor + 1);
+    }
+
+    /**
+     * Get the current (active) version of this consent type's group, by slug.
+     */
+    public function currentVersion(): ?ConsentType
+    {
+        return static::query()
+            ->where('slug', $this->slug)
+            ->where('active', true)
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->first();
     }
 
     /**
@@ -151,12 +196,15 @@ class ConsentType extends Model
     }
 
     /**
-     * Get every consent type in the cookie category.
+     * Get every active (current-version) consent type in the cookie category.
      *
      * @return Collection<int, static>
      */
     public static function cookies(): Collection
     {
-        return static::query()->where('category', 'cookie')->get();
+        return static::query()
+            ->where('category', 'cookie')
+            ->where('active', true)
+            ->get();
     }
 }

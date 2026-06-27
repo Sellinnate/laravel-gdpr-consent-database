@@ -152,10 +152,7 @@ class UserConsent extends Model
             return false;
         }
 
-        $currentVersion = ConsentType::query()
-            ->where('slug', 'like', $this->consentType->slug.'%')
-            ->where('active', true)
-            ->first();
+        $currentVersion = $this->consentType->currentVersion();
 
         if (! $currentVersion) {
             return false;

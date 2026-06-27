@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Selli\LaravelGdprConsentDatabase;
 
 use Illuminate\Support\Facades\Blade;
+use Selli\LaravelGdprConsentDatabase\Commands\AnonymizeSubjectCommand;
 use Selli\LaravelGdprConsentDatabase\Services\GuestConsentManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -29,7 +30,10 @@ class LaravelGdprConsentDatabaseServiceProvider extends PackageServiceProvider
             ->hasMigration('3_add_versioning_to_consent_types_table')
             ->hasMigration('4_add_expiration_to_user_consents_table')
             ->hasMigration('5_create_guest_consents_table')
-            ->hasMigration('6_add_category_to_consent_types_table');
+            ->hasMigration('6_add_category_to_consent_types_table')
+            ->hasMigration('7_add_compliance_fields_to_consent_types_table')
+            ->hasMigration('8_create_consent_audit_logs_table')
+            ->hasCommand(AnonymizeSubjectCommand::class);
     }
 
     public function packageRegistered(): void

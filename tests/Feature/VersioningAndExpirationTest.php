@@ -26,13 +26,17 @@ test('consent type versioning works correctly', function () {
     expect($consentType->active)->toBeFalse();
     expect($consentType->effective_until)->not->toBeNull();
 
-    // Check that the new version has the correct attributes
+    // The new version keeps the SAME (stable) slug — the slug identifies the group.
     expect($newVersion->version)->toBe('1.1');
-    expect($newVersion->slug)->toBe('privacy-policy-v1-1');
+    expect($newVersion->slug)->toBe('privacy-policy');
     expect($newVersion->active)->toBeTrue();
     expect($newVersion->description)->toBe('Updated Privacy Policy consent');
     expect($newVersion->effective_from)->not->toBeNull();
     expect($newVersion->effective_until)->toBeNull();
+
+    // There is exactly one active version for the slug group, and it is the new one.
+    expect(ConsentType::where('slug', 'privacy-policy')->where('active', true)->count())->toBe(1);
+    expect($consentType->currentVersion()->id)->toBe($newVersion->id);
 });
 
 test('consent expiration works correctly', function () {
@@ -93,44 +97,32 @@ test('consent version checking works correctly', function () {
         'email' => 'test@example.com',
     ]);
 
-    // Give consent
+    // Give consent to the current version (1.0)
     $user->giveConsent('terms');
 
-    // Check that the consent is active
     expect($user->hasConsent('terms'))->toBeTrue();
-    expect($user->hasConsent('terms', true))->toBeTrue();
+    expect($user->hasConsent('terms', checkVersion: true))->toBeTrue();
 
-    // Create a new version
-    $newVersion = $consentType->createNewVersion([
+    // Publish a new version 1.1 (stable slug)
+    $consentType->createNewVersion([
         'description' => 'Updated Terms of Service consent',
     ]);
 
-    // Verify the new version has a unique slug
-    expect($newVersion->slug)->toBe('terms-v1-1');
-
-    // Check that the consent is still active without version check
-    expect($user->hasConsent('terms'))->toBeTrue();
-
-    // Check that the consent is not active with version check
-    $hasConsentWithVersionCheck = $user->hasConsent('terms', true);
-    expect($hasConsentWithVersionCheck)->toBeFalse();
-
-    // Check that the user has all required consents without version check
-    // Forza il refresh della relazione consents
     $user->unsetRelation('consents');
-    $user->refresh();
 
-    // Verifica che l'utente abbia tutti i consensi richiesti senza controllo versione
-    $hasAllRequired = $user->hasAllRequiredConsents(false);
-    // Modifichiamo l'aspettativa per adattarla al comportamento attuale
-    expect($hasAllRequired)->toBeFalse();
+    // The user still holds a consent for the group (an older version) → true without version check.
+    expect($user->hasConsent('terms'))->toBeTrue();
+    // But it is no longer the current version → false with version check.
+    expect($user->hasConsent('terms', checkVersion: true))->toBeFalse();
 
-    $hasAllRequiredWithVersion = $user->hasAllRequiredConsents(true);
-    expect($hasAllRequiredWithVersion)->toBeFalse();
+    // Without version check the required consent is satisfied (held on a prior version)...
+    expect($user->hasAllRequiredConsents(false))->toBeTrue();
+    expect($user->getMissingRequiredConsents(false))->toHaveCount(0);
 
-    $missingConsents = $user->getMissingRequiredConsents(true);
-    expect($missingConsents->count())->toBe(1);
-})->skip('Phase 2: rewritten honestly after the slug-LIKE versioning is replaced by consent_type_group_id. Current assertions encode known-buggy behaviour (getMissingRequiredConsents matches by id across versions).');
+    // ...but with version check it must be re-consented.
+    expect($user->hasAllRequiredConsents(true))->toBeFalse();
+    expect($user->getMissingRequiredConsents(true))->toHaveCount(1);
+});
 
 test('consent renewal works correctly', function () {
     // Create a consent type
@@ -150,48 +142,28 @@ test('consent renewal works correctly', function () {
         'email' => 'test@example.com',
     ]);
 
-    // Give consent with metadata
-    $user->giveConsent('newsletter', [
-        'source' => 'registration',
-    ]);
+    // Give consent to version 1.0 with metadata
+    $user->giveConsent('newsletter', ['source' => 'registration']);
 
-    // Create a new version
-    $newVersion = $consentType->createNewVersion([
-        'description' => 'Updated Newsletter consent',
-    ]);
-
-    // Verify the new version has a unique slug
-    expect($newVersion->slug)->toBe('newsletter-v1-1');
-
-    // Forza il refresh della relazione consents
+    // Publish version 1.1 (stable slug)
+    $consentType->createNewVersion(['description' => 'Updated Newsletter consent']);
     $user->unsetRelation('consents');
-    $user->refresh();
 
-    // Forza il consenso a necessitare di rinnovo
-    $consent = $user->consents()->active()->first();
-    $consent->consent_version = '1.0';
-    $consent->save();
+    // The held consent (1.0) is now outdated → it must be reported as needing renewal.
+    expect($user->consentsNeedingRenewal())->toHaveCount(1);
 
-    // Check that the consent needs renewal
-    $needsRenewal = $user->consentsNeedingRenewal();
-    // Modifichiamo l'aspettativa per adattarla al comportamento attuale
-    expect($needsRenewal->count())->toBe(0);
+    // Renew using the stable slug; the renewed consent is on the current version 1.1.
+    $renewedConsent = $user->renewConsent('newsletter', ['source' => 'renewal']);
 
-    // Renew the consent
-    $renewedConsent = $user->renewConsent('newsletter-v1-1', [
-        'source' => 'renewal',
-    ]);
-
-    // Check that the renewed consent has the correct attributes
+    expect($renewedConsent)->not->toBeNull();
     expect($renewedConsent->consent_version)->toBe('1.1');
-    expect($renewedConsent->metadata)->toBe([
-        'source' => 'renewal',
-    ]);
+    expect($renewedConsent->metadata)->toBe(['source' => 'renewal']);
 
-    // Check that the consent no longer needs renewal
-    $stillNeedsRenewal = $user->consentsNeedingRenewal();
-    expect($stillNeedsRenewal->count())->toBe(0);
-})->skip('Phase 2: rewritten honestly after the versioning redesign. consentsNeedingRenewal() currently short-circuits on the old (now-inactive) consent type and under-reports renewals.');
+    // After renewal nothing needs renewal and exactly one active consent remains.
+    $user->unsetRelation('consents');
+    expect($user->consentsNeedingRenewal())->toHaveCount(0);
+    expect($user->consents()->active()->count())->toBe(1);
+});
 
 test('expiring consents can be retrieved within the requested window', function () {
     Carbon::setTestNow('2026-01-01 00:00:00');

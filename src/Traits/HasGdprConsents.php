@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
+use Selli\LaravelGdprConsentDatabase\Models\ConsentAuditLog;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
+use Selli\LaravelGdprConsentDatabase\Services\ConsentAnonymizer;
 
 /**
  * Adds GDPR consent management to an Eloquent model.
@@ -27,6 +29,18 @@ trait HasGdprConsents
     public function consents(): MorphMany
     {
         return $this->morphMany(UserConsent::class, 'consentable');
+    }
+
+    /**
+     * Get the immutable audit trail of every consent action for this model.
+     *
+     * @return MorphMany<ConsentAuditLog, $this>
+     */
+    public function consentAuditLogs(): MorphMany
+    {
+        return $this->morphMany(ConsentAuditLog::class, 'consentable')
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('id');
     }
 
     /**
@@ -60,32 +74,43 @@ trait HasGdprConsents
         $activeConsents->load('consentType');
 
         return $activeConsents->filter(function (UserConsent $consent): bool {
-            // If the consent type is no longer effective, there is nothing to renew.
-            if (! $consent->consentType || ! $consent->consentType->isEffective()) {
+            if (! $consent->consentType) {
                 return false;
             }
 
-            return $consent->needsRenewal();
+            $current = $consent->consentType->currentVersion();
+
+            // Nothing to renew towards when the group has no active version any more.
+            if (! $current) {
+                return false;
+            }
+
+            // Needs renewal when expired or when a newer effective version exists.
+            return $consent->isExpired() || $consent->consent_version !== $current->version;
         })->values();
     }
 
     /**
      * Determine whether the model has an active consent for the given type.
      *
+     * Matching is by consent-type *group* (slug): a consent granted on any version of the group
+     * counts. When $checkVersion is true, the held consent must also be on the current version.
+     *
      * @param  string|int  $consentTypeId  A consent type slug or primary key.
      * @param  bool  $checkVersion  Whether the consent must match the current version.
      */
     public function hasConsent(string|int $consentTypeId, bool $checkVersion = false): bool
     {
-        $resolvedId = $this->resolveConsentTypeId($consentTypeId);
+        $consentType = $this->resolveConsentType($consentTypeId);
 
-        if ($resolvedId === null) {
+        if (! $consentType) {
             return false;
         }
 
         $consent = $this->consents()
-            ->where('consent_type_id', $resolvedId)
+            ->whereIn('consent_type_id', $this->groupVersionIds($consentType))
             ->active()
+            ->latest('granted_at')
             ->first();
 
         if (! $consent) {
@@ -100,7 +125,8 @@ trait HasGdprConsents
     }
 
     /**
-     * Grant consent for the given type, superseding any previous active consent.
+     * Grant consent for the current version of the given type, superseding any previous active
+     * consent for the same group.
      *
      * @param  string|int  $consentTypeId  A consent type slug or primary key.
      * @param  array<string, mixed>  $metadata  Extra data to persist with the consent.
@@ -110,9 +136,16 @@ trait HasGdprConsents
     {
         $consentType = $this->resolveConsentTypeOrFail($consentTypeId);
 
+        // Refuse to record fresh consent for a retired / not-yet-effective purpose: there must be
+        // a currently effective version to consent to (GDPR: consent is purpose-specific).
+        if (! $consentType->isEffective()) {
+            throw (new ModelNotFoundException)->setModel(ConsentType::class, [$consentTypeId]);
+        }
+
         return DB::transaction(function () use ($consentType, $metadata, $validityMonths): UserConsent {
-            // Supersede any previous active consent for this type.
-            $this->revokeConsent($consentType->id);
+            // Supersede any previous active consent for this group (across all versions),
+            // enforcing a single active consent per group.
+            $this->revokeConsentGroup($consentType);
 
             $expiresAt = null;
             if ($validityMonths !== null) {
@@ -121,7 +154,7 @@ trait HasGdprConsents
                 $expiresAt = $consentType->calculateExpirationDate();
             }
 
-            return $this->consents()->create([
+            $consent = $this->consents()->create([
                 'consent_type_id' => $consentType->id,
                 'consent_version' => $consentType->version,
                 'granted' => true,
@@ -131,28 +164,32 @@ trait HasGdprConsents
                 'user_agent' => request()->userAgent(),
                 'metadata' => $metadata,
             ]);
+
+            $consent->setRelation('consentType', $consentType);
+            $this->recordConsentAudit(ConsentAuditLog::ACTION_GRANTED, $consent);
+
+            return $consent;
         });
     }
 
     /**
-     * Revoke every active consent for the given type.
+     * Revoke every active consent for the given type's group (any version).
+     *
+     * Returns 0 when the consent type cannot be resolved (no exception is thrown), so it is safe
+     * to call with arbitrary slugs from user input.
      *
      * @param  string|int  $consentTypeId  A consent type slug or primary key.
      * @return int The number of consent records that were revoked.
      */
     public function revokeConsent(string|int $consentTypeId): int
     {
-        $resolvedId = is_string($consentTypeId)
-            ? $this->resolveConsentTypeOrFail($consentTypeId)->id
-            : $consentTypeId;
+        $consentType = $this->resolveConsentType($consentTypeId);
 
-        return $this->consents()
-            ->where('consent_type_id', $resolvedId)
-            ->active()
-            ->update([
-                'revoked_at' => now(),
-                'granted' => false,
-            ]);
+        if (! $consentType) {
+            return 0;
+        }
+
+        return $this->revokeConsentGroup($consentType);
     }
 
     /**
@@ -170,28 +207,110 @@ trait HasGdprConsents
         }
 
         return DB::transaction(function () use ($consentType, $metadata): UserConsent {
-            $existingConsents = $this->consents()
-                ->where('consent_type_id', $consentType->id)
-                ->active()
-                ->get();
+            if ($metadata === []) {
+                $previous = $this->consents()
+                    ->whereIn('consent_type_id', $this->groupVersionIds($consentType))
+                    ->active()
+                    ->latest('granted_at')
+                    ->first();
 
-            foreach ($existingConsents as $existingConsent) {
-                $existingConsent->granted = false;
-                $existingConsent->revoked_at = now();
-                $existingConsent->save();
-
-                // Preserve the previous metadata when no new metadata is supplied.
-                if ($metadata === [] && $existingConsent->metadata) {
-                    $metadata = $existingConsent->metadata;
+                if ($previous && $previous->metadata) {
+                    $metadata = $previous->metadata;
                 }
             }
 
+            // giveConsent supersedes the whole group and records the current version.
             $newConsent = $this->giveConsent($consentType->id, $metadata);
 
             $this->unsetRelation('consents');
 
             return $newConsent;
         });
+    }
+
+    /**
+     * Revoke every active consent belonging to the given type's group.
+     */
+    protected function revokeConsentGroup(ConsentType $consentType): int
+    {
+        $ids = $this->groupVersionIds($consentType);
+
+        // lockForUpdate narrows the race window for the "single active consent per group" invariant
+        // on engines that support row locks (MySQL/Postgres); it is a harmless no-op on SQLite.
+        // Always call inside a transaction (giveConsent/renewConsent already wrap this).
+        $activeConsents = $this->consents()
+            ->whereIn('consent_type_id', $ids)
+            ->active()
+            ->lockForUpdate()
+            ->get();
+
+        if ($activeConsents->isEmpty()) {
+            return 0;
+        }
+
+        foreach ($activeConsents as $activeConsent) {
+            $this->recordConsentAudit(ConsentAuditLog::ACTION_REVOKED, $activeConsent);
+        }
+
+        return $this->consents()
+            ->whereIn('consent_type_id', $ids)
+            ->active()
+            ->update([
+                'revoked_at' => now(),
+                'granted' => false,
+            ]);
+    }
+
+    /**
+     * Anonymise (pseudonymise) every consent record of this model for a GDPR Art. 17 erasure
+     * request. Identifying data is scrubbed while the audit proof is preserved under a pseudonym.
+     *
+     * @return array{token: string, consents: int, audit_logs: int}
+     */
+    public function anonymizeConsents(?string $token = null): array
+    {
+        return app(ConsentAnonymizer::class)->anonymizeModel($this, $token);
+    }
+
+    /**
+     * Append an immutable audit-trail entry for a consent action.
+     */
+    protected function recordConsentAudit(string $action, UserConsent $consent): void
+    {
+        $consent->loadMissing('consentType');
+        $consentType = $consent->consentType;
+
+        // Only a "granted" action carries the consent metadata; copying grant metadata onto a
+        // revoke entry would misattribute the grant's context to the revocation event.
+        $metadata = $action === ConsentAuditLog::ACTION_GRANTED ? $consent->metadata : null;
+
+        // Created through the polymorphic relation so consentable_type/id are set from this model.
+        $this->consentAuditLogs()->create([
+            'consent_type_id' => $consent->consent_type_id,
+            'consent_type_slug' => $consentType?->slug,
+            'consent_version' => $consent->consent_version,
+            'action' => $action,
+            'occurred_at' => now(),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'policy_url' => $consentType?->policy_url,
+            'policy_text_hash' => $consentType?->policy_text_hash,
+            'metadata' => $metadata,
+        ]);
+    }
+
+    /**
+     * Get every consent-type version id sharing the given type's slug (its group).
+     *
+     * @return array<int, int>
+     */
+    protected function groupVersionIds(ConsentType $consentType): array
+    {
+        return ConsentType::query()
+            ->where('slug', $consentType->slug)
+            ->get()
+            ->map(fn (ConsentType $type): int => $type->id)
+            ->all();
     }
 
     /**
@@ -211,7 +330,11 @@ trait HasGdprConsents
         $activeConsents->load('consentType');
 
         return $requiredConsentTypes->filter(function (ConsentType $consentType) use ($activeConsents, $checkVersion): bool {
-            $consent = $activeConsents->firstWhere('consent_type_id', $consentType->id);
+            // Match by slug group, not by primary key: a consent granted on a previous version
+            // still satisfies the requirement when we are not checking the version.
+            $consent = $activeConsents->first(
+                fn (UserConsent $c): bool => $c->consentType !== null && $c->consentType->slug === $consentType->slug
+            );
 
             if (! $consent) {
                 return true;
@@ -249,18 +372,6 @@ trait HasGdprConsents
     }
 
     /**
-     * Resolve a slug or id to the consent type's primary key, or null when it cannot be found.
-     */
-    protected function resolveConsentTypeId(string|int $consentTypeId): int|string|null
-    {
-        if (! is_string($consentTypeId)) {
-            return $consentTypeId;
-        }
-
-        return $this->resolveConsentType($consentTypeId)?->id;
-    }
-
-    /**
      * Resolve a slug or id to a ConsentType model, or null when it cannot be found.
      */
     protected function resolveConsentType(string|int $consentTypeId): ?ConsentType
@@ -269,23 +380,14 @@ trait HasGdprConsents
             return ConsentType::query()->find($consentTypeId);
         }
 
-        $consentType = ConsentType::query()->where('slug', $consentTypeId)->first();
-
-        if ($consentType) {
-            return $consentType;
-        }
-
-        // Only fall back to base-slug resolution when the input explicitly carries a version
-        // suffix (e.g. "terms-v1-2"). This avoids accidentally matching a different consent
-        // type whose slug merely shares a prefix (e.g. "marketing" vs "marketing-emails").
-        if (preg_match('/^(?<base>.+)-v\d+-\d+$/', $consentTypeId, $matches) !== 1) {
-            return null;
-        }
-
+        // A slug identifies a consent-type group. Resolve it to the current (active) version;
+        // fall back to the most recent historical version when no active one exists (e.g. a
+        // retired purpose still referenced for read-only checks). No LIKE matching is involved.
         return ConsentType::query()
-            ->where('slug', 'like', $matches['base'].'-v%')
-            ->where('active', true)
+            ->where('slug', $consentTypeId)
+            ->orderByDesc('active')
             ->orderByDesc('effective_from')
+            ->orderByDesc('id')
             ->first();
     }
 

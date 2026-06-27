@@ -28,6 +28,9 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'testing');
+        // Enforce foreign keys on the in-memory sqlite connection so the test suite validates the
+        // same referential behaviour (cascade / nullOnDelete) that MySQL and Postgres apply.
+        config()->set('database.connections.testing.foreign_key_constraints', true);
 
         // Include package migrations
         $migrationPath = __DIR__.'/../database/migrations/';

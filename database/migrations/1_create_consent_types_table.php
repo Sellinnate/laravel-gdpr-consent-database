@@ -11,7 +11,10 @@ return new class extends Migration
         Schema::create('consent_types', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('slug')->unique();
+            // The slug identifies a consent-type "group" and is stable across versions, so it is
+            // intentionally NOT unique on its own. Uniqueness is enforced per (slug, version) in a
+            // later migration. A single active row per slug represents the current version.
+            $table->string('slug')->index();
             $table->text('description')->nullable();
             $table->boolean('required')->default(false);
             $table->boolean('active')->default(true);
