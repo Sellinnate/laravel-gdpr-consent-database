@@ -45,6 +45,8 @@ class ConsentAuditLog extends Model
 
     public const ACTION_RENEWED = 'renewed';
 
+    public const ACTION_EXPIRED = 'expired';
+
     public const ACTION_ANONYMIZED = 'anonymized';
 
     /**

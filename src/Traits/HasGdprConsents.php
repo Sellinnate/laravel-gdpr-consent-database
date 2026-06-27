@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
+use Selli\LaravelGdprConsentDatabase\Events\ConsentGranted;
+use Selli\LaravelGdprConsentDatabase\Events\ConsentRenewed;
+use Selli\LaravelGdprConsentDatabase\Events\ConsentRevoked;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentAuditLog;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
@@ -142,10 +145,31 @@ trait HasGdprConsents
             throw (new ModelNotFoundException)->setModel(ConsentType::class, [$consentTypeId]);
         }
 
-        return DB::transaction(function () use ($consentType, $metadata, $validityMonths): UserConsent {
+        $consent = $this->persistConsent($consentType, $metadata, $validityMonths);
+
+        ConsentGranted::dispatch($this, $consent);
+
+        return $consent;
+    }
+
+    /**
+     * Persist a fresh consent for the current version, superseding the group. No event is dispatched.
+     *
+     * @param  array<string, mixed>  $metadata
+     * @param  string  $auditAction  The audit action recorded for the new consent (granted / renewed).
+     * @param  bool  $auditSupersede  Whether to record a revoke audit entry for superseded consents.
+     */
+    protected function persistConsent(
+        ConsentType $consentType,
+        array $metadata,
+        ?int $validityMonths,
+        string $auditAction = ConsentAuditLog::ACTION_GRANTED,
+        bool $auditSupersede = true,
+    ): UserConsent {
+        return DB::transaction(function () use ($consentType, $metadata, $validityMonths, $auditAction, $auditSupersede): UserConsent {
             // Supersede any previous active consent for this group (across all versions),
             // enforcing a single active consent per group.
-            $this->revokeConsentGroup($consentType);
+            $this->revokeConsentGroup($consentType, $auditSupersede);
 
             $expiresAt = null;
             if ($validityMonths !== null) {
@@ -166,7 +190,7 @@ trait HasGdprConsents
             ]);
 
             $consent->setRelation('consentType', $consentType);
-            $this->recordConsentAudit(ConsentAuditLog::ACTION_GRANTED, $consent);
+            $this->recordConsentAudit($auditAction, $consent);
 
             return $consent;
         });
@@ -189,7 +213,13 @@ trait HasGdprConsents
             return 0;
         }
 
-        return $this->revokeConsentGroup($consentType);
+        $revoked = DB::transaction(fn (): Collection => $this->revokeConsentGroup($consentType));
+
+        foreach ($revoked as $consent) {
+            ConsentRevoked::dispatch($this, $consent);
+        }
+
+        return $revoked->count();
     }
 
     /**
@@ -206,7 +236,7 @@ trait HasGdprConsents
             return null;
         }
 
-        return DB::transaction(function () use ($consentType, $metadata): UserConsent {
+        $newConsent = DB::transaction(function () use ($consentType, $metadata): UserConsent {
             if ($metadata === []) {
                 $previous = $this->consents()
                     ->whereIn('consent_type_id', $this->groupVersionIds($consentType))
@@ -219,25 +249,34 @@ trait HasGdprConsents
                 }
             }
 
-            // giveConsent supersedes the whole group and records the current version.
-            $newConsent = $this->giveConsent($consentType->id, $metadata);
+            // Supersede the whole group and record the renewal (a single 'renewed' audit entry,
+            // not a revoke+grant pair, so the trail reads as a renewal rather than a withdrawal).
+            $consent = $this->persistConsent($consentType, $metadata, null, ConsentAuditLog::ACTION_RENEWED, false);
 
             $this->unsetRelation('consents');
 
-            return $newConsent;
+            return $consent;
         });
+
+        ConsentRenewed::dispatch($this, $newConsent);
+
+        return $newConsent;
     }
 
     /**
      * Revoke every active consent belonging to the given type's group.
+     *
+     * @param  bool  $recordAudit  Whether to write a revoke audit entry for each consent. Set false
+     *                             when the revocation is part of a renewal (recorded as 'renewed').
+     * @return Collection<int, UserConsent> The consents that were revoked.
      */
-    protected function revokeConsentGroup(ConsentType $consentType): int
+    protected function revokeConsentGroup(ConsentType $consentType, bool $recordAudit = true): Collection
     {
         $ids = $this->groupVersionIds($consentType);
 
         // lockForUpdate narrows the race window for the "single active consent per group" invariant
         // on engines that support row locks (MySQL/Postgres); it is a harmless no-op on SQLite.
-        // Always call inside a transaction (giveConsent/renewConsent already wrap this).
+        // Always call inside a transaction (giveConsent/renewConsent/revokeConsent already wrap this).
         $activeConsents = $this->consents()
             ->whereIn('consent_type_id', $ids)
             ->active()
@@ -245,20 +284,24 @@ trait HasGdprConsents
             ->get();
 
         if ($activeConsents->isEmpty()) {
-            return 0;
+            return $activeConsents;
         }
 
-        foreach ($activeConsents as $activeConsent) {
-            $this->recordConsentAudit(ConsentAuditLog::ACTION_REVOKED, $activeConsent);
+        if ($recordAudit) {
+            foreach ($activeConsents as $activeConsent) {
+                $this->recordConsentAudit(ConsentAuditLog::ACTION_REVOKED, $activeConsent);
+            }
         }
 
-        return $this->consents()
+        $this->consents()
             ->whereIn('consent_type_id', $ids)
             ->active()
             ->update([
                 'revoked_at' => now(),
                 'granted' => false,
             ]);
+
+        return $activeConsents;
     }
 
     /**
@@ -280,9 +323,11 @@ trait HasGdprConsents
         $consent->loadMissing('consentType');
         $consentType = $consent->consentType;
 
-        // Only a "granted" action carries the consent metadata; copying grant metadata onto a
-        // revoke entry would misattribute the grant's context to the revocation event.
-        $metadata = $action === ConsentAuditLog::ACTION_GRANTED ? $consent->metadata : null;
+        // Grant/renew entries carry the consent metadata; a revoke entry must not inherit the
+        // grant's context, which would misattribute it to the revocation event.
+        $metadata = in_array($action, [ConsentAuditLog::ACTION_GRANTED, ConsentAuditLog::ACTION_RENEWED], true)
+            ? $consent->metadata
+            : null;
 
         // Created through the polymorphic relation so consentable_type/id are set from this model.
         $this->consentAuditLogs()->create([

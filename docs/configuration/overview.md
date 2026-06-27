@@ -11,8 +11,34 @@ Publish the config file first:
 php artisan vendor:publish --tag="gdpr-consent-database-config"
 ```
 
-This creates `config/gdpr-consent-database.php`. The current options control the **cookie banner**
-appearance and copy.
+This creates `config/gdpr-consent-database.php`.
+
+## `routes` — endpoint registration
+
+Control the guest cookie-consent endpoints:
+
+| Key | Default | Description |
+|---|---|---|
+| `enabled` | `true` | Register the package routes at all |
+| `prefix` | `gdpr/consent` | URL prefix for the endpoints |
+| `name` | `gdpr.consent.` | Route name prefix |
+| `middleware` | `['web']` | Middleware applied to the group (keep `web` for session + CSRF) |
+
+```php
+'routes' => [
+    'enabled' => true,
+    'prefix' => 'gdpr/consent',
+    'name' => 'gdpr.consent.',
+    'middleware' => ['web'],
+],
+```
+
+Set `enabled` to `false` if you want to register your own routes pointing at
+`Selli\LaravelGdprConsentDatabase\Http\Controllers\GuestConsentController`.
+
+## Cookie banner options
+
+The remaining options control the **cookie banner** appearance and copy.
 
 ## `text` — banner copy
 

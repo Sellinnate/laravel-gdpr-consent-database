@@ -31,6 +31,9 @@ class TestCase extends Orchestra
         // Enforce foreign keys on the in-memory sqlite connection so the test suite validates the
         // same referential behaviour (cascade / nullOnDelete) that MySQL and Postgres apply.
         config()->set('database.connections.testing.foreign_key_constraints', true);
+        // The package routes run under the `web` middleware group, which encrypts cookies and
+        // therefore requires an application key.
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
 
         // Include package migrations
         $migrationPath = __DIR__.'/../database/migrations/';

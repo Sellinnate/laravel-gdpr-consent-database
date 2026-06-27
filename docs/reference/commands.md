@@ -38,6 +38,57 @@ Subject anonymised.
 
 See [Data Subject Rights](/compliance/data-subject-rights) for details.
 
+## `gdpr:consents:export`
+
+Export a subject's consents and audit trail as JSON (GDPR Art. 15 / 20).
+
+```bash
+php artisan gdpr:consents:export {type} {id} [--path=]
+```
+
+| Argument / Option | Description |
+|---|---|
+| `type` | The consentable type (morph alias or class name) |
+| `id` | The subject identifier |
+| `--path` | Write the JSON to a file instead of stdout |
+
+```bash
+php artisan gdpr:consents:export "App\Models\User" 42 --path=storage/exports/user-42.json
+```
+
+## `gdpr:consents:expire`
+
+Close consents that are past their expiry date: marks them ungranted, writes an `expired` audit entry and
+dispatches the `ConsentExpired` event. Idempotent — already-closed consents are skipped. Schedule it daily:
+
+```php
+// app/Console/Kernel.php (or routes/console.php on Laravel 11+)
+$schedule->command('gdpr:consents:expire')->daily();
+```
+
+```bash
+php artisan gdpr:consents:expire
+```
+
+## Events
+
+The package dispatches domain events you can listen to:
+
+| Event | When |
+|---|---|
+| `ConsentGranted` | A subject grants consent |
+| `ConsentRevoked` | A subject explicitly withdraws consent |
+| `ConsentRenewed` | A subject renews onto the current version |
+| `ConsentExpired` | `gdpr:consents:expire` closes an expired consent |
+
+```php
+use Selli\LaravelGdprConsentDatabase\Events\ConsentGranted;
+
+Event::listen(ConsentGranted::class, function (ConsentGranted $event) {
+    // $event->consentable, $event->consent
+});
+```
+
 ## Seeder: default cookie types
 
 Not a command, but commonly run during setup:

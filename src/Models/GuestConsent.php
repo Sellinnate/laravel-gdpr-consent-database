@@ -7,6 +7,7 @@ namespace Selli\LaravelGdprConsentDatabase\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Selli\LaravelGdprConsentDatabase\Contracts\Consentable;
 use Selli\LaravelGdprConsentDatabase\Database\Factories\GuestConsentFactory;
 use Selli\LaravelGdprConsentDatabase\Traits\HasGdprConsents;
 
@@ -18,7 +19,7 @@ use Selli\LaravelGdprConsentDatabase\Traits\HasGdprConsents;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class GuestConsent extends Model
+class GuestConsent extends Model implements Consentable
 {
     /** @use HasFactory<GuestConsentFactory> */
     use HasFactory;

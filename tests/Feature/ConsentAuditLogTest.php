@@ -83,6 +83,25 @@ test('superseding a consent records a revoke for the old and a grant for the new
     expect($latestGrant->policy_url)->toBe('https://example.com/privacy/v2');
 });
 
+test('renewing records a single renewed audit entry, not a revoke+grant pair (Phase 3 review)', function () {
+    $type = makePolicyType();
+    $user = TestUser::create(['name' => 'A', 'email' => 'renew-audit@example.com']);
+
+    $user->giveConsent('privacy-policy', ['source' => 'signup']); // granted v1.0
+    $type->createNewVersion();                                    // v1.1
+    $user->unsetRelation('consents');
+
+    $user->renewConsent('privacy-policy');
+
+    // The renewal must read as a renewal, not a withdrawal: one 'renewed' entry, no 'revoked'.
+    expect(ConsentAuditLog::where('action', 'renewed')->count())->toBe(1);
+    expect(ConsentAuditLog::where('action', 'revoked')->count())->toBe(0);
+
+    $renewed = ConsentAuditLog::where('action', 'renewed')->first();
+    expect($renewed->consent_version)->toBe('1.1');
+    expect($renewed->metadata)->toBe(['source' => 'signup']); // metadata carried forward
+});
+
 test('the audit trail is exposed via the consentAuditLogs relation', function () {
     makePolicyType();
     $user = TestUser::create(['name' => 'A', 'email' => 'd@example.com']);

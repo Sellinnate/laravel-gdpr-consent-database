@@ -2,6 +2,23 @@
 
 // config for Selli/LaravelGdprConsentDatabase
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | Routes
+    |--------------------------------------------------------------------------
+    |
+    | The package registers the guest cookie-consent endpoints. You can disable
+    | them entirely, change the URL prefix, or adjust the middleware stack.
+    | The endpoints rely on session + CSRF, so keep the `web` middleware group
+    | (or an equivalent) unless you provide your own.
+    */
+    'routes' => [
+        'enabled' => true,
+        'prefix' => 'gdpr/consent',
+        'name' => 'gdpr.consent.',
+        'middleware' => ['web'],
+    ],
+
     'text' => [
         'title' => 'Cookie Consent',
         'message' => 'We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. For additional information, please see our <a href="cookie-policy" target="_blank">Cookie Policy</a> and <a href="privacy-policy" target="_blank">Privacy Policy</a>.',
