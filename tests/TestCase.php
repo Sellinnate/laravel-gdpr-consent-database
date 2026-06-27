@@ -3,6 +3,7 @@
 namespace Selli\LaravelGdprConsentDatabase\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Selli\LaravelGdprConsentDatabase\LaravelGdprConsentDatabaseServiceProvider;
 
@@ -31,13 +32,13 @@ class TestCase extends Orchestra
         // Include package migrations
         $migrationPath = __DIR__.'/../database/migrations/';
         if (file_exists($migrationPath)) {
-            foreach (\Illuminate\Support\Facades\File::files($migrationPath) as $migration) {
+            foreach (File::files($migrationPath) as $migration) {
                 (include $migration->getRealPath())->up();
             }
         }
 
         // Include test migrations
-        foreach (\Illuminate\Support\Facades\File::files(__DIR__.'/database/migrations') as $migration) {
+        foreach (File::files(__DIR__.'/database/migrations') as $migration) {
             (include $migration->getRealPath())->up();
         }
     }

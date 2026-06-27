@@ -1,0 +1,64 @@
+{
+  "title": "Laravel GDPR Consent Manager",
+  "url": "https://sellinnate.github.io/laravel-gdpr-consent-database",
+  "src": "docs",
+  "out": "site",
+  "engine": "js",
+  "layout": {
+    "spa": true,
+    "header": {
+      "enabled": true
+    },
+    "sidebar": {
+      "collapsible": true,
+      "defaultCollapsed": false
+    },
+    "optionsMenu": {
+      "position": "sidebar-top",
+      "components": {
+        "search": true,
+        "themeSwitch": true
+      }
+    },
+    "footer": {
+      "style": "minimal",
+      "content": "© 2026 Selli — Laravel GDPR Consent Manager. MIT License.",
+      "branding": true
+    }
+  },
+  "theme": {
+    "name": "default",
+    "appearance": "system",
+    "codeHighlight": true
+  },
+  "minify": true,
+  "autoTitleFromH1": true,
+  "copyCode": true,
+  "pageNavigation": true,
+  "navigation": [
+    { "title": "Introduction", "path": "/", "icon": "home" },
+    {
+      "title": "Getting Started",
+      "icon": "rocket",
+      "collapsible": false,
+      "children": [
+        { "title": "Installation", "path": "/getting-started/installation", "icon": "download" },
+        { "title": "Quick Start", "path": "/getting-started/quick-start", "icon": "play" },
+        { "title": "Core Concepts", "path": "/getting-started/concepts", "icon": "book-open" }
+      ]
+    },
+    {
+      "title": "Configuration",
+      "icon": "cog",
+      "children": [
+        { "title": "Overview", "path": "/configuration/overview", "icon": "sliders" }
+      ]
+    },
+    { "title": "GitHub", "path": "https://github.com/sellinnate/laravel-gdpr-consent-database", "icon": "github", "external": true }
+  ],
+  "plugins": {
+    "seo": {
+      "defaultDescription": "Enterprise-grade GDPR consent management for Laravel: consent types, versioning, expiration, guest consents, audit trail and a configurable cookie banner."
+    }
+  }
+}

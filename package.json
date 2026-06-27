@@ -1,0 +1,20 @@
+{
+  "name": "laravel-gdpr-consent-database-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Documentation site (docmd) for the Laravel GDPR Consent Manager package.",
+  "scripts": {
+    "docs:dev": "docmd dev",
+    "docs:build": "docmd build",
+    "docs:validate": "docmd validate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sellinnate/laravel-gdpr-consent-database.git"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@docmd/core": "^0.8.9"
+  }
+}

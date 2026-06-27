@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::table('user_consents', function (Blueprint $table) {
             $table->string('consent_version')->nullable()->after('consent_type_id');
@@ -14,7 +14,7 @@ return new class extends Migration
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('user_consents', function (Blueprint $table) {
             $table->dropColumn(['consent_version', 'expires_at']);

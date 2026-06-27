@@ -7,7 +7,7 @@ use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 
 class CookieConsentSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
         $cookieConsents = [
             [

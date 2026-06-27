@@ -1,55 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Selli\LaravelGdprConsentDatabase\Services;
 
+use Illuminate\Database\Eloquent\Collection;
+use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 use Selli\LaravelGdprConsentDatabase\Models\GuestConsent;
+use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 
 class GuestConsentManager
 {
-    public function getGuestConsent($sessionId = null): GuestConsent
+    /**
+     * Resolve (or create) the guest consent record for the given session/technical cookie code.
+     */
+    public function getGuestConsent(?string $sessionId = null): GuestConsent
     {
         return GuestConsent::findOrCreateForSession($sessionId);
     }
 
-    public function hasConsent($consentTypeSlug, $sessionId = null, $checkVersion = false): bool
+    /**
+     * Determine whether the guest has an active consent for the given type.
+     */
+    public function hasConsent(string $consentTypeSlug, ?string $sessionId = null, bool $checkVersion = false): bool
     {
-        $guest = $this->getGuestConsent($sessionId);
-
-        return $guest->hasConsent($consentTypeSlug, $checkVersion);
+        return $this->getGuestConsent($sessionId)->hasConsent($consentTypeSlug, $checkVersion);
     }
 
-    public function giveConsent($consentTypeSlug, array $metadata = [], $validityMonths = null, $sessionId = null)
+    /**
+     * Grant consent for the guest.
+     *
+     * @param  array<string, mixed>  $metadata
+     */
+    public function giveConsent(string $consentTypeSlug, array $metadata = [], ?int $validityMonths = null, ?string $sessionId = null): UserConsent
     {
-        $guest = $this->getGuestConsent($sessionId);
-
-        return $guest->giveConsent($consentTypeSlug, $metadata, $validityMonths);
+        return $this->getGuestConsent($sessionId)->giveConsent($consentTypeSlug, $metadata, $validityMonths);
     }
 
-    public function revokeConsent($consentTypeSlug, $sessionId = null): bool
+    /**
+     * Revoke a guest consent. Returns true when at least one record was revoked.
+     */
+    public function revokeConsent(string $consentTypeSlug, ?string $sessionId = null): bool
     {
-        $guest = $this->getGuestConsent($sessionId);
-
-        return $guest->revokeConsent($consentTypeSlug);
+        return $this->getGuestConsent($sessionId)->revokeConsent($consentTypeSlug) > 0;
     }
 
-    public function getActiveConsents($sessionId = null)
+    /**
+     * Get the guest's active consents.
+     *
+     * @return Collection<int, UserConsent>
+     */
+    public function getActiveConsents(?string $sessionId = null): Collection
     {
-        $guest = $this->getGuestConsent($sessionId);
-
-        return $guest->activeConsents();
+        return $this->getGuestConsent($sessionId)->activeConsents();
     }
 
-    public function getMissingRequiredConsents($sessionId = null, $checkVersion = false)
+    /**
+     * Get the required consent types the guest is still missing.
+     *
+     * @return Collection<int, ConsentType>
+     */
+    public function getMissingRequiredConsents(?string $sessionId = null, bool $checkVersion = false): Collection
     {
-        $guest = $this->getGuestConsent($sessionId);
-
-        return $guest->getMissingRequiredConsents($checkVersion);
+        return $this->getGuestConsent($sessionId)->getMissingRequiredConsents($checkVersion);
     }
 
-    public function hasAllRequiredConsents($sessionId = null, $checkVersion = false): bool
+    /**
+     * Determine whether the guest holds every required consent.
+     */
+    public function hasAllRequiredConsents(?string $sessionId = null, bool $checkVersion = false): bool
     {
-        $guest = $this->getGuestConsent($sessionId);
-
-        return $guest->hasAllRequiredConsents($checkVersion);
+        return $this->getGuestConsent($sessionId)->hasAllRequiredConsents($checkVersion);
     }
 }

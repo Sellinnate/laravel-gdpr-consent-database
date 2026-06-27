@@ -1,20 +1,47 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Selli\LaravelGdprConsentDatabase\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
+use Selli\LaravelGdprConsentDatabase\Database\Factories\UserConsentFactory;
 
+/**
+ * @property int $id
+ * @property string $consentable_type
+ * @property string $consentable_id
+ * @property int $consent_type_id
+ * @property string|null $consent_version
+ * @property bool $granted
+ * @property Carbon|null $granted_at
+ * @property Carbon|null $revoked_at
+ * @property Carbon|null $expires_at
+ * @property string|null $ip_address
+ * @property string|null $user_agent
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read ConsentType|null $consentType
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<UserConsent> active()
+ * @method static \Illuminate\Database\Eloquent\Builder<UserConsent> revoked()
+ * @method static \Illuminate\Database\Eloquent\Builder<UserConsent> expired()
+ */
 class UserConsent extends Model
 {
+    /** @use HasFactory<UserConsentFactory> */
     use HasFactory;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'consent_type_id',
@@ -29,20 +56,25 @@ class UserConsent extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attribute casts.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'granted' => 'boolean',
-        'granted_at' => 'datetime',
-        'revoked_at' => 'datetime',
-        'expires_at' => 'datetime',
-        'metadata' => 'json',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'granted' => 'boolean',
+            'granted_at' => 'datetime',
+            'revoked_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'metadata' => 'array',
+        ];
+    }
 
     /**
      * Get the consent type that owns the user consent.
+     *
+     * @return BelongsTo<ConsentType, $this>
      */
     public function consentType(): BelongsTo
     {
@@ -51,6 +83,8 @@ class UserConsent extends Model
 
     /**
      * Get the parent consentable model.
+     *
+     * @return MorphTo<Model, $this>
      */
     public function consentable(): MorphTo
     {
@@ -58,16 +92,16 @@ class UserConsent extends Model
     }
 
     /**
-     * Scope a query to only include active consents.
+     * Scope a query to only include active (granted, not revoked, not expired) consents.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder<UserConsent>  $query
+     * @return Builder<UserConsent>
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('granted', true)
             ->whereNull('revoked_at')
-            ->where(function ($query) {
+            ->where(function (Builder $query): void {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
             });
@@ -76,21 +110,21 @@ class UserConsent extends Model
     /**
      * Scope a query to only include revoked consents.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder<UserConsent>  $query
+     * @return Builder<UserConsent>
      */
-    public function scopeRevoked($query)
+    public function scopeRevoked(Builder $query): Builder
     {
         return $query->whereNotNull('revoked_at');
     }
 
     /**
-     * Scope a query to only include expired consents.
+     * Scope a query to only include expired (but not revoked) consents.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder<UserConsent>  $query
+     * @return Builder<UserConsent>
      */
-    public function scopeExpired($query)
+    public function scopeExpired(Builder $query): Builder
     {
         return $query->whereNotNull('expires_at')
             ->where('expires_at', '<=', now())
@@ -98,25 +132,28 @@ class UserConsent extends Model
     }
 
     /**
-     * Check if the consent is expired.
+     * Determine whether the consent has passed its expiration date.
      */
     public function isExpired(): bool
     {
-        return $this->expires_at && now()->gt($this->expires_at);
+        return $this->expires_at !== null && now()->greaterThan($this->expires_at);
     }
 
     /**
-     * Check if the consent is for the current version of the consent type.
+     * Determine whether the consent matches the current version of its consent type.
      */
     public function isCurrentVersion(): bool
     {
-        // Carica la relazione se non è già caricata
         if (! $this->relationLoaded('consentType')) {
             $this->load('consentType');
         }
 
-        // Trova la versione attiva corrente del tipo di consenso
-        $currentVersion = ConsentType::where('slug', 'like', $this->consentType->slug.'%')
+        if (! $this->consentType) {
+            return false;
+        }
+
+        $currentVersion = ConsentType::query()
+            ->where('slug', 'like', $this->consentType->slug.'%')
             ->where('active', true)
             ->first();
 
@@ -128,7 +165,7 @@ class UserConsent extends Model
     }
 
     /**
-     * Check if the consent needs renewal due to version change.
+     * Determine whether the consent needs renewal (expired or tied to an outdated version).
      */
     public function needsRenewal(): bool
     {
@@ -136,14 +173,17 @@ class UserConsent extends Model
     }
 
     /**
-     * Get days until expiration.
+     * Get the number of whole days until the consent expires, or null when it never expires.
+     *
+     * Rounds up, so a consent expiring in less than 24 hours reports 1 (not 0). Returns 0 only
+     * when the consent has already expired.
      */
     public function daysUntilExpiration(): ?int
     {
-        if (! $this->expires_at) {
+        if ($this->expires_at === null) {
             return null;
         }
 
-        return max(0, now()->diffInDays($this->expires_at, false));
+        return (int) max(0, ceil(now()->diffInDays($this->expires_at, false)));
     }
 }

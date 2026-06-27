@@ -1,94 +1,70 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Selli\LaravelGdprConsentDatabase\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 
+/**
+ * @extends Factory<ConsentType>
+ */
 class ConsentTypeFactory extends Factory
 {
+    /** @var class-string<ConsentType> */
     protected $model = ConsentType::class;
 
-    public function definition()
+    public function definition(): array
     {
         return [
             'name' => $this->faker->sentence(3),
             'slug' => $this->faker->unique()->slug(2),
             'description' => $this->faker->paragraph(),
-            'required' => $this->faker->boolean(20), // 20% di probabilità che sia richiesto
-            'active' => $this->faker->boolean(80), // 80% di probabilità che sia attivo
+            'required' => $this->faker->boolean(20),
+            'active' => $this->faker->boolean(80),
             'category' => $this->faker->randomElement(['cookie', 'other']),
             'metadata' => null,
         ];
     }
 
     /**
-     * Indica che il tipo di consenso è richiesto.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * Indicate that the consent type is required.
      */
-    public function required()
+    public function required(): static
     {
-        return $this->state(function (array $attributes) {
-            return [
-                'required' => true,
-            ];
-        });
+        return $this->state(fn (array $attributes): array => ['required' => true]);
     }
 
     /**
-     * Indica che il tipo di consenso è attivo.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * Indicate that the consent type is active.
      */
-    public function active()
+    public function active(): static
     {
-        return $this->state(function (array $attributes) {
-            return [
-                'active' => true,
-            ];
-        });
+        return $this->state(fn (array $attributes): array => ['active' => true]);
     }
 
     /**
-     * Indica che il tipo di consenso è inattivo.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * Indicate that the consent type is inactive.
      */
-    public function inactive()
+    public function inactive(): static
     {
-        return $this->state(function (array $attributes) {
-            return [
-                'active' => false,
-            ];
-        });
+        return $this->state(fn (array $attributes): array => ['active' => false]);
     }
 
     /**
-     * Indica che il tipo di consenso è relativo ai cookie.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * Indicate that the consent type belongs to the cookie category.
      */
-    public function cookie()
+    public function cookie(): static
     {
-        return $this->state(function (array $attributes) {
-            return [
-                'category' => 'cookie',
-            ];
-        });
+        return $this->state(fn (array $attributes): array => ['category' => 'cookie']);
     }
 
     /**
-     * Indica che il tipo di consenso non è relativo ai cookie.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * Indicate that the consent type belongs to the non-cookie category.
      */
-    public function other()
+    public function other(): static
     {
-        return $this->state(function (array $attributes) {
-            return [
-                'category' => 'other',
-            ];
-        });
+        return $this->state(fn (array $attributes): array => ['category' => 'other']);
     }
 }

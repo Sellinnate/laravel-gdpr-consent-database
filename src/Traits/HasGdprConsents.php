@@ -1,15 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Selli\LaravelGdprConsentDatabase\Traits;
 
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 use Selli\LaravelGdprConsentDatabase\Models\ConsentType;
 use Selli\LaravelGdprConsentDatabase\Models\UserConsent;
 
+/**
+ * Adds GDPR consent management to an Eloquent model.
+ *
+ * @phpstan-require-extends Model
+ */
 trait HasGdprConsents
 {
     /**
      * Get all consents for this model.
+     *
+     * @return MorphMany<UserConsent, $this>
      */
     public function consents(): MorphMany
     {
@@ -17,100 +30,61 @@ trait HasGdprConsents
     }
 
     /**
-     * Get active consents for this model.
+     * Get the active (granted, not revoked, not expired) consents for this model.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection<int, UserConsent>
      */
-    public function activeConsents()
+    public function activeConsents(): Collection
     {
         return $this->consents()->active()->get();
     }
 
     /**
-     * Get expired consents for this model.
+     * Get the expired consents for this model.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection<int, UserConsent>
      */
-    public function expiredConsents()
+    public function expiredConsents(): Collection
     {
         return $this->consents()->expired()->get();
     }
 
     /**
-     * Get consents that need renewal (expired or outdated version).
+     * Get the active consents that need renewal (expired or tied to an outdated version).
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection<int, UserConsent>
      */
-    public function consentsNeedingRenewal()
+    public function consentsNeedingRenewal(): Collection
     {
-        // Ottieni tutti i consensi attivi
         $activeConsents = $this->activeConsents();
-
-        // Carica le relazioni consentType per tutti i consensi attivi
         $activeConsents->load('consentType');
 
-        // Filtra quelli che necessitano di rinnovo (scaduti o con versione obsoleta)
-        return $activeConsents->filter(function ($consent) {
-            // Se il tipo di consenso non è più attivo, non è necessario rinnovarlo
+        return $activeConsents->filter(function (UserConsent $consent): bool {
+            // If the consent type is no longer effective, there is nothing to renew.
             if (! $consent->consentType || ! $consent->consentType->isEffective()) {
                 return false;
             }
 
-            // Verifica se il consenso è scaduto
-            $isExpired = $consent->isExpired();
-
-            // Trova la versione attiva corrente del tipo di consenso
-            $currentVersion = ConsentType::where('slug', 'like', $consent->consentType->slug.'%')
-                ->where('active', true)
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            // Se non c'è una versione attiva, il consenso non necessita di rinnovo
-            if (! $currentVersion) {
-                return false;
-            }
-
-            // Verifica se la versione del consenso è obsoleta
-            $isOutdatedVersion = $consent->consent_version !== $currentVersion->version;
-
-            // Il consenso necessita di rinnovo se è scaduto o ha una versione obsoleta
-            return $isExpired || $isOutdatedVersion;
-        });
+            return $consent->needsRenewal();
+        })->values();
     }
 
     /**
-     * Check if the model has given consent for a specific type.
+     * Determine whether the model has an active consent for the given type.
      *
-     * @param  string|int  $consentTypeId
-     * @param  bool  $checkVersion  Whether to check if the consent is for the current version
-     * @return bool
+     * @param  string|int  $consentTypeId  A consent type slug or primary key.
+     * @param  bool  $checkVersion  Whether the consent must match the current version.
      */
-    public function hasConsent($consentTypeId, $checkVersion = false)
+    public function hasConsent(string|int $consentTypeId, bool $checkVersion = false): bool
     {
-        $consentType = null;
+        $resolvedId = $this->resolveConsentTypeId($consentTypeId);
 
-        if (is_string($consentTypeId)) {
-            // Cerca per slug esatto
-            $consentType = ConsentType::where('slug', $consentTypeId)->first();
-
-            if (! $consentType) {
-                // Prova a cercare per slug base (senza versione)
-                $baseSlug = preg_replace('/-v\d+-\d+$/', '', $consentTypeId);
-                $consentType = ConsentType::where('slug', 'like', $baseSlug.'%')
-                    ->where('active', true)
-                    ->first();
-
-                if (! $consentType) {
-                    return false;
-                }
-            }
-
-            $consentTypeId = $consentType->id;
+        if ($resolvedId === null) {
+            return false;
         }
 
-        // Ottieni il consenso attivo
         $consent = $this->consents()
-            ->where('consent_type_id', $consentTypeId)
+            ->where('consent_type_id', $resolvedId)
             ->active()
             ->first();
 
@@ -118,84 +92,62 @@ trait HasGdprConsents
             return false;
         }
 
-        // Se richiesto, verifica che il consenso sia per la versione corrente
-        if ($checkVersion) {
-            // Carica la relazione consentType se non è già caricata
-            if (! $consent->relationLoaded('consentType')) {
-                $consent->load('consentType');
-            }
-
-            // Trova la versione attiva corrente
-            $currentConsentType = ConsentType::where('slug', 'like', $consent->consentType->slug.'%')
-                ->where('active', true)
-                ->first();
-
-            if (! $currentConsentType || $consent->consent_version !== $currentConsentType->version) {
-                return false;
-            }
+        if ($checkVersion && ! $consent->isCurrentVersion()) {
+            return false;
         }
 
         return true;
     }
 
     /**
-     * Give consent for a specific type.
+     * Grant consent for the given type, superseding any previous active consent.
      *
-     * @param  string|int  $consentTypeId
-     * @param  array  $metadata  Additional metadata to store with the consent
-     * @param  int|null  $validityMonths  Override the default validity period
-     * @return \Selli\LaravelGdprConsentDatabase\Models\UserConsent
+     * @param  string|int  $consentTypeId  A consent type slug or primary key.
+     * @param  array<string, mixed>  $metadata  Extra data to persist with the consent.
+     * @param  int|null  $validityMonths  Overrides the consent type's default validity period.
      */
-    public function giveConsent($consentTypeId, array $metadata = [], $validityMonths = null)
+    public function giveConsent(string|int $consentTypeId, array $metadata = [], ?int $validityMonths = null): UserConsent
     {
-        $consentType = null;
+        $consentType = $this->resolveConsentTypeOrFail($consentTypeId);
 
-        if (is_string($consentTypeId)) {
-            $consentType = ConsentType::where('slug', $consentTypeId)->firstOrFail();
-            $consentTypeId = $consentType->id;
-        } else {
-            $consentType = ConsentType::findOrFail($consentTypeId);
-        }
+        return DB::transaction(function () use ($consentType, $metadata, $validityMonths): UserConsent {
+            // Supersede any previous active consent for this type.
+            $this->revokeConsent($consentType->id);
 
-        // Revoca eventuali consensi precedenti per questo tipo
-        $this->revokeConsent($consentTypeId);
+            $expiresAt = null;
+            if ($validityMonths !== null) {
+                $expiresAt = now()->addMonths($validityMonths);
+            } elseif ($consentType->validity_months) {
+                $expiresAt = $consentType->calculateExpirationDate();
+            }
 
-        // Calcola la data di scadenza
-        $expiresAt = null;
-        if ($validityMonths !== null) {
-            $expiresAt = now()->addMonths($validityMonths);
-        } elseif ($consentType->validity_months) {
-            $expiresAt = $consentType->calculateExpirationDate();
-        }
-
-        // Crea un nuovo consenso
-        return $this->consents()->create([
-            'consent_type_id' => $consentTypeId,
-            'consent_version' => $consentType->version,
-            'granted' => true,
-            'granted_at' => now(),
-            'expires_at' => $expiresAt,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'metadata' => $metadata,
-        ]);
+            return $this->consents()->create([
+                'consent_type_id' => $consentType->id,
+                'consent_version' => $consentType->version,
+                'granted' => true,
+                'granted_at' => now(),
+                'expires_at' => $expiresAt,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'metadata' => $metadata,
+            ]);
+        });
     }
 
     /**
-     * Revoke consent for a specific type.
+     * Revoke every active consent for the given type.
      *
-     * @param  string|int  $consentTypeId
-     * @return bool
+     * @param  string|int  $consentTypeId  A consent type slug or primary key.
+     * @return int The number of consent records that were revoked.
      */
-    public function revokeConsent($consentTypeId)
+    public function revokeConsent(string|int $consentTypeId): int
     {
-        if (is_string($consentTypeId)) {
-            $consentType = ConsentType::where('slug', $consentTypeId)->firstOrFail();
-            $consentTypeId = $consentType->id;
-        }
+        $resolvedId = is_string($consentTypeId)
+            ? $this->resolveConsentTypeOrFail($consentTypeId)->id
+            : $consentTypeId;
 
         return $this->consents()
-            ->where('consent_type_id', $consentTypeId)
+            ->where('consent_type_id', $resolvedId)
             ->active()
             ->update([
                 'revoked_at' => now(),
@@ -204,201 +156,154 @@ trait HasGdprConsents
     }
 
     /**
-     * Renew a consent with the latest version.
+     * Renew a consent by superseding the active records with a fresh consent for the current version.
      *
-     * @param  string|int  $consentTypeId
-     * @return \Selli\LaravelGdprConsentDatabase\Models\UserConsent|null
+     * @param  string|int  $consentTypeId  A consent type slug or primary key.
+     * @param  array<string, mixed>  $metadata  Extra data to persist; falls back to the previous metadata.
      */
-    public function renewConsent($consentTypeId, array $metadata = [])
+    public function renewConsent(string|int $consentTypeId, array $metadata = []): ?UserConsent
     {
-        $consentType = null;
+        $consentType = $this->resolveConsentType($consentTypeId);
 
-        if (is_string($consentTypeId)) {
-            // Supporta sia lo slug originale che gli slug con versione
-            $consentType = ConsentType::where('slug', $consentTypeId)->first();
-            if (! $consentType) {
-                // Prova a cercare per slug parziale (per supportare gli slug con versione)
-                $baseSlug = preg_replace('/-v\d+-\d+$/', '', $consentTypeId);
-                $consentType = ConsentType::where('slug', 'like', $baseSlug.'%')
-                    ->where('active', true)
-                    ->first();
-
-                if (! $consentType) {
-                    return null;
-                }
-            }
-            $consentTypeId = $consentType->id;
-        } else {
-            $consentType = ConsentType::find($consentTypeId);
-            if (! $consentType) {
-                return null;
-            }
-        }
-
-        // Check if the consent type is active
-        if (! $consentType->isEffective()) {
+        if (! $consentType || ! $consentType->isEffective()) {
             return null;
         }
 
-        // Trova tutti i consensi attivi per questo tipo di consenso
-        $existingConsents = $this->consents()
-            ->where('consent_type_id', $consentTypeId)
-            ->active()
-            ->get();
+        return DB::transaction(function () use ($consentType, $metadata): UserConsent {
+            $existingConsents = $this->consents()
+                ->where('consent_type_id', $consentType->id)
+                ->active()
+                ->get();
 
-        // Revoca tutti i consensi esistenti
-        foreach ($existingConsents as $existingConsent) {
-            $existingConsent->granted = false;
-            $existingConsent->revoked_at = now();
-            $existingConsent->save();
+            foreach ($existingConsents as $existingConsent) {
+                $existingConsent->granted = false;
+                $existingConsent->revoked_at = now();
+                $existingConsent->save();
 
-            // Merge existing metadata with new metadata
-            if (empty($metadata) && $existingConsent->metadata) {
-                $metadata = $existingConsent->metadata;
+                // Preserve the previous metadata when no new metadata is supplied.
+                if ($metadata === [] && $existingConsent->metadata) {
+                    $metadata = $existingConsent->metadata;
+                }
             }
-        }
 
-        // Give consent with the latest version
-        $newConsent = $this->giveConsent($consentTypeId, $metadata);
+            $newConsent = $this->giveConsent($consentType->id, $metadata);
 
-        // Forza il refresh della cache dei consensi
-        $this->unsetRelation('consents');
+            $this->unsetRelation('consents');
 
-        return $newConsent;
+            return $newConsent;
+        });
     }
 
     /**
-     * Get all required consent types that the model has not consented to.
+     * Get the required, active consent types the model is currently missing.
      *
-     * @param  bool  $checkVersion  Whether to check if the consent is for the current version
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param  bool  $checkVersion  Whether a consent on an outdated version counts as missing.
+     * @return Collection<int, ConsentType>
      */
-    public function getMissingRequiredConsents($checkVersion = false)
+    public function getMissingRequiredConsents(bool $checkVersion = false): Collection
     {
-        // Ottieni tutti i tipi di consenso richiesti e attivi
-        $requiredConsentTypes = ConsentType::where('required', true)
+        $requiredConsentTypes = ConsentType::query()
+            ->where('required', true)
             ->where('active', true)
             ->get();
 
-        $missingConsents = collect();
-
-        // Ottieni tutti i consensi attivi dell'utente
         $activeConsents = $this->activeConsents();
-
-        // Carica le relazioni consentType per tutti i consensi attivi
         $activeConsents->load('consentType');
 
-        foreach ($requiredConsentTypes as $consentType) {
-            // Se non stiamo controllando la versione, verifica solo se esiste un consenso attivo
-            if (! $checkVersion) {
-                $hasConsent = $activeConsents->contains('consent_type_id', $consentType->id);
-                if (! $hasConsent) {
-                    $missingConsents->push($consentType);
-                }
-            } else {
-                // Se stiamo controllando la versione, verifica che il consenso sia per la versione corrente
-                $consent = $activeConsents->firstWhere('consent_type_id', $consentType->id);
-
-                // Se non c'è consenso, aggiungi alla lista dei mancanti
-                if (! $consent) {
-                    $missingConsents->push($consentType);
-
-                    continue;
-                }
-
-                // Verifica se la versione del consenso è corrente
-                if (! $consent->isCurrentVersion()) {
-                    $missingConsents->push($consentType);
-                }
-            }
-        }
-
-        return $missingConsents;
-    }
-
-    /**
-     * Check if the model has all required consents.
-     *
-     * @param  bool  $checkVersion  Whether to check if the consent is for the current version
-     * @return bool
-     */
-    public function hasAllRequiredConsents($checkVersion = false)
-    {
-        // Ottieni tutti i tipi di consenso richiesti e attivi
-        $requiredConsentTypes = ConsentType::where('required', true)
-            ->where('active', true)
-            ->get();
-
-        // Se non ci sono tipi di consenso richiesti, restituisci true
-        if ($requiredConsentTypes->isEmpty()) {
-            return true;
-        }
-
-        // Ottieni tutti i consensi attivi dell'utente
-        $activeConsents = $this->activeConsents();
-
-        // Se non stiamo controllando la versione, verifica solo se esistono consensi attivi per tutti i tipi richiesti
-        if (! $checkVersion) {
-            foreach ($requiredConsentTypes as $consentType) {
-                if (! $activeConsents->contains('consent_type_id', $consentType->id)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        // Se stiamo controllando la versione, verifica che i consensi siano per le versioni correnti
-        $activeConsents->load('consentType');
-
-        foreach ($requiredConsentTypes as $consentType) {
+        return $requiredConsentTypes->filter(function (ConsentType $consentType) use ($activeConsents, $checkVersion): bool {
             $consent = $activeConsents->firstWhere('consent_type_id', $consentType->id);
 
-            // Se non c'è consenso o la versione non è corrente, restituisci false
-            if (! $consent || ! $consent->isCurrentVersion()) {
-                return false;
+            if (! $consent) {
+                return true;
             }
-        }
 
-        return true;
+            return $checkVersion && ! $consent->isCurrentVersion();
+        })->values();
     }
 
     /**
-     * Get consents that are about to expire within the specified days.
+     * Determine whether the model holds every required, active consent.
      *
-     * @param  int  $days
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param  bool  $checkVersion  Whether each consent must match the current version.
      */
-    public function getConsentsExpiringWithinDays($days = 30)
+    public function hasAllRequiredConsents(bool $checkVersion = false): bool
     {
-        // Ottieni tutti i consensi attivi con data di scadenza
-        $activeConsents = $this->consents()
+        return $this->getMissingRequiredConsents($checkVersion)->isEmpty();
+    }
+
+    /**
+     * Get the active consents that will expire within the given number of days.
+     *
+     * @return Collection<int, UserConsent>
+     */
+    public function getConsentsExpiringWithinDays(int $days = 30): Collection
+    {
+        $now = now();
+
+        return $this->consents()
             ->active()
             ->whereNotNull('expires_at')
+            ->where('expires_at', '>', $now)
+            ->where('expires_at', '<=', $now->copy()->addDays($days))
             ->get();
+    }
 
-        // Calcola la data di scadenza dal momento corrente (che potrebbe essere modificato nei test con Carbon::setTestNow)
-        $now = now();
-        $expiryDate = $now->copy()->addDays($days);
-
-        // Nel test, il consenso viene creato con una scadenza di 0.5 mesi (~15 giorni)
-        // Forza la data di scadenza a essere nel futuro per il test
-        if (app()->environment('testing')) {
-            // Nei test, assicuriamoci che la data di scadenza sia nel futuro
-            foreach ($activeConsents as $consent) {
-                if ($consent->expires_at && $consent->expires_at->eq($now)) {
-                    // Forza la data di scadenza a essere 15 giorni nel futuro per il test
-                    $consent->expires_at = $now->copy()->addDays(15);
-                }
-            }
+    /**
+     * Resolve a slug or id to the consent type's primary key, or null when it cannot be found.
+     */
+    protected function resolveConsentTypeId(string|int $consentTypeId): int|string|null
+    {
+        if (! is_string($consentTypeId)) {
+            return $consentTypeId;
         }
 
-        // Filtra quelli che scadranno entro il numero di giorni specificato
-        return $activeConsents->filter(function ($consent) use ($expiryDate, $now) {
-            // Verifica che la data di scadenza sia tra ora e la data di scadenza calcolata
-            return $consent->expires_at &&
-                   $consent->expires_at->lte($expiryDate) &&
-                   $consent->expires_at->gt($now);
-        });
+        return $this->resolveConsentType($consentTypeId)?->id;
+    }
+
+    /**
+     * Resolve a slug or id to a ConsentType model, or null when it cannot be found.
+     */
+    protected function resolveConsentType(string|int $consentTypeId): ?ConsentType
+    {
+        if (! is_string($consentTypeId)) {
+            return ConsentType::query()->find($consentTypeId);
+        }
+
+        $consentType = ConsentType::query()->where('slug', $consentTypeId)->first();
+
+        if ($consentType) {
+            return $consentType;
+        }
+
+        // Only fall back to base-slug resolution when the input explicitly carries a version
+        // suffix (e.g. "terms-v1-2"). This avoids accidentally matching a different consent
+        // type whose slug merely shares a prefix (e.g. "marketing" vs "marketing-emails").
+        if (preg_match('/^(?<base>.+)-v\d+-\d+$/', $consentTypeId, $matches) !== 1) {
+            return null;
+        }
+
+        return ConsentType::query()
+            ->where('slug', 'like', $matches['base'].'-v%')
+            ->where('active', true)
+            ->orderByDesc('effective_from')
+            ->first();
+    }
+
+    /**
+     * Resolve a slug or id to a ConsentType model, failing when it cannot be found.
+     *
+     *
+     * @throws ModelNotFoundException<ConsentType>
+     */
+    protected function resolveConsentTypeOrFail(string|int $consentTypeId): ConsentType
+    {
+        $consentType = $this->resolveConsentType($consentTypeId);
+
+        if (! $consentType) {
+            throw (new ModelNotFoundException)
+                ->setModel(ConsentType::class, [$consentTypeId]);
+        }
+
+        return $consentType;
     }
 }

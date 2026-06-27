@@ -59,3 +59,25 @@ jobs:
 
       - name: Execute tests
         run: vendor/bin/pest --ci
+
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    name: Coverage gate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, intl, fileinfo
+          coverage: pcov
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      # Gate progressivo: la soglia verrà alzata a 90 nella Fase 5.
+      - name: Enforce coverage threshold
+        run: vendor/bin/pest --coverage --min=80 --ci

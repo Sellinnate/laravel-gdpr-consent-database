@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/images/banner.png" alt="Laravel GDPR Consent Manager — Consent & privacy for Laravel" width="100%">
+</p>
+
 # Laravel GDPR Consent Database
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/selli/laravel-gdpr-consent-database.svg?style=flat-square)](https://packagist.org/packages/selli/laravel-gdpr-consent-database)
@@ -81,7 +85,7 @@ return [
 Optionally, you can publish the views using
 
 ```bash
-php artisan vendor:publish --tag="laravel-gdpr-consent-database-views"
+php artisan vendor:publish --tag="gdpr-consent-database-views"
 ```
 
 ## Usage
@@ -318,7 +322,7 @@ The package provides a blade directive for displaying cookie consent banners:
 You can publish and customize the cookie banner view:
 
 ```bash
-php artisan vendor:publish --tag="laravel-gdpr-consent-database-views"
+php artisan vendor:publish --tag="gdpr-consent-database-views"
 ```
 
 This will publish the view to `resources/views/vendor/gdpr-consent-database/cookie-banner.blade.php`.

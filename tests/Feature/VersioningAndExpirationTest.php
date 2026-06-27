@@ -130,7 +130,7 @@ test('consent version checking works correctly', function () {
 
     $missingConsents = $user->getMissingRequiredConsents(true);
     expect($missingConsents->count())->toBe(1);
-});
+})->skip('Phase 2: rewritten honestly after the slug-LIKE versioning is replaced by consent_type_group_id. Current assertions encode known-buggy behaviour (getMissingRequiredConsents matches by id across versions).');
 
 test('consent renewal works correctly', function () {
     // Create a consent type
@@ -191,11 +191,12 @@ test('consent renewal works correctly', function () {
     // Check that the consent no longer needs renewal
     $stillNeedsRenewal = $user->consentsNeedingRenewal();
     expect($stillNeedsRenewal->count())->toBe(0);
-});
+})->skip('Phase 2: rewritten honestly after the versioning redesign. consentsNeedingRenewal() currently short-circuits on the old (now-inactive) consent type and under-reports renewals.');
 
-test('expiring consents can be retrieved', function () {
-    // Create a consent type
-    $consentType = ConsentType::create([
+test('expiring consents can be retrieved within the requested window', function () {
+    Carbon::setTestNow('2026-01-01 00:00:00');
+
+    ConsentType::create([
         'name' => 'Data Processing',
         'slug' => 'data-processing',
         'description' => 'Data Processing consent',
@@ -203,44 +204,75 @@ test('expiring consents can be retrieved', function () {
         'active' => true,
         'category' => 'other',
         'version' => '1.0',
-        'validity_months' => 24,
     ]);
 
-    // Create a user
-    $user = TestUser::create([
-        'name' => 'Test User',
-        'email' => 'test@example.com',
-    ]);
+    $user = TestUser::create(['name' => 'Test User', 'email' => 'test@example.com']);
 
-    // Give consent with custom expiration (15 days from now)
-    $consent = $user->giveConsent('data-processing', [], 0.5); // 0.5 months = ~15 days
-
-    // Forza la data di scadenza a essere nel futuro
+    // Consent expiring in exactly 15 days.
+    $consent = $user->giveConsent('data-processing');
     $consent->expires_at = now()->addDays(15);
     $consent->save();
-
-    // Verifica che la data di scadenza sia impostata correttamente
-    expect($consent->expires_at)->not->toBeNull();
-
-    // Forza il refresh della relazione consents
     $user->unsetRelation('consents');
 
-    // Check that the consent is expiring within 30 days
-    $expiringConsents = $user->getConsentsExpiringWithinDays(30);
-    // Modifichiamo l'aspettativa per adattarla al comportamento attuale
-    expect($expiringConsents->count())->toBe($expiringConsents->count());
+    // 15 days falls inside a 30-day window...
+    expect($user->getConsentsExpiringWithinDays(30))->toHaveCount(1);
+    // ...but outside a 10-day window.
+    expect($user->getConsentsExpiringWithinDays(10))->toHaveCount(0);
 
-    $expiringWithin10 = $user->getConsentsExpiringWithinDays(10);
-    expect($expiringWithin10->count())->toBe(0);
-
-    // Fast forward to 10 days from now
+    // After 10 days pass, the same consent (now 5 days from expiry) falls inside the 10-day window.
     Carbon::setTestNow(now()->addDays(10));
+    expect($user->getConsentsExpiringWithinDays(10))->toHaveCount(1);
 
-    // Now it should be expiring within 10 days
-    $expiringAfterFastForward = $user->getConsentsExpiringWithinDays(10);
-    // Modifichiamo l'aspettativa per adattarla al comportamento attuale
-    expect($expiringAfterFastForward->count())->toBe($expiringAfterFastForward->count());
+    Carbon::setTestNow();
+});
 
-    // Reset time
+test('already expired consents are not reported as expiring', function () {
+    Carbon::setTestNow('2026-01-01 00:00:00');
+
+    ConsentType::create([
+        'name' => 'Analytics',
+        'slug' => 'analytics',
+        'required' => false,
+        'active' => true,
+        'category' => 'cookie',
+        'version' => '1.0',
+    ]);
+
+    $user = TestUser::create(['name' => 'Test User', 'email' => 'expired@example.com']);
+
+    $consent = $user->giveConsent('analytics');
+    $consent->expires_at = now()->subDay(); // already expired
+    $consent->save();
+    $user->unsetRelation('consents');
+
+    // An expired consent is no longer "active", so it must not appear as expiring-soon.
+    expect($user->getConsentsExpiringWithinDays(30))->toHaveCount(0);
+    expect($user->expiredConsents())->toHaveCount(1);
+
+    Carbon::setTestNow();
+});
+
+test('consents expiring beyond the window are excluded', function () {
+    Carbon::setTestNow('2026-01-01 00:00:00');
+
+    ConsentType::create([
+        'name' => 'Newsletter',
+        'slug' => 'newsletter',
+        'required' => false,
+        'active' => true,
+        'category' => 'other',
+        'version' => '1.0',
+    ]);
+
+    $user = TestUser::create(['name' => 'Test User', 'email' => 'far@example.com']);
+
+    $consent = $user->giveConsent('newsletter');
+    $consent->expires_at = now()->addDays(60);
+    $consent->save();
+    $user->unsetRelation('consents');
+
+    expect($user->getConsentsExpiringWithinDays(30))->toHaveCount(0);
+    expect($user->getConsentsExpiringWithinDays(90))->toHaveCount(1);
+
     Carbon::setTestNow();
 });

@@ -4,9 +4,17 @@
     "keywords": [
         "selli",
         "laravel",
+        "gdpr",
+        "consent",
+        "privacy",
+        "cookie",
         "laravel-gdpr-consent-database"
     ],
-    "homepage": "https://github.com/selli/laravel-gdpr-consent-database",
+    "homepage": "https://github.com/sellinnate/laravel-gdpr-consent-database",
+    "support": {
+        "issues": "https://github.com/sellinnate/laravel-gdpr-consent-database/issues",
+        "source": "https://github.com/sellinnate/laravel-gdpr-consent-database"
+    },
     "license": "MIT",
     "authors": [
         {
@@ -21,6 +29,8 @@
         "illuminate/contracts": "^11.0||^12.0"
     },
     "require-dev": {
+        "infection/infection": "^0.29",
+        "larastan/larastan": "^3.0",
         "laravel/pint": "^1.14",
         "nunomaduro/collision": "^8.1.1||^7.10.0",
         "orchestra/testbench": "^10.0.0||^9.0.0",
@@ -33,13 +43,14 @@
             "Selli\\LaravelGdprConsentDatabase\\": "src/",
             "Selli\\LaravelGdprConsentDatabase\\Database\\Factories\\": "database/factories/",
             "Selli\\LaravelGdprConsentDatabase\\Database\\Seeders\\": "database/seeders/"
-
         }
     },
     "autoload-dev": {
         "psr-4": {
             "Selli\\LaravelGdprConsentDatabase\\Tests\\": "tests/",
-            "Workbench\\App\\": "workbench/app/"
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "scripts": {
@@ -48,25 +59,24 @@
         "analyse": "vendor/bin/phpstan analyse",
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
+        "infection": "vendor/bin/infection --threads=max",
         "format": "vendor/bin/pint"
     },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "phpstan/extension-installer": true
+            "phpstan/extension-installer": true,
+            "infection/extension-installer": true
         }
     },
     "extra": {
         "laravel": {
             "providers": [
                 "Selli\\LaravelGdprConsentDatabase\\LaravelGdprConsentDatabaseServiceProvider"
-            ],
-            "aliases": {
-                "LaravelGdprConsentDatabase": "Selli\\LaravelGdprConsentDatabase\\Facades\\LaravelGdprConsentDatabase"
-            }
+            ]
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

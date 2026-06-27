@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::table('consent_types', function (Blueprint $table) {
             $table->string('category')->default('other')->after('active');
@@ -21,7 +21,7 @@ return new class extends Migration
             ->update(['category' => 'cookie']);
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('consent_types', function (Blueprint $table) {
             $table->dropColumn('category');

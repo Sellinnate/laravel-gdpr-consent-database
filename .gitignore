@@ -13,6 +13,8 @@ yarn-error.log
 .phpunit.cache
 .phpunit.result.cache
 /build
+.infection.cache
+infection.log
 
 # IDE Helper
 _ide_helper.php
@@ -26,7 +28,14 @@ _ide_helper_models.php
 
 # Misc
 phpunit.xml
-phpstan.neon
 testbench.yaml
-/docs
 /coverage
+
+# docmd build output (source lives in /docs, site is generated)
+/site
+SKILL.md
+/okf
+
+# Internal working documents (not part of the published package)
+PLAN.md
+DEVELOPMENT_NOTES.md
