@@ -9,7 +9,19 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/sellinnate/laravel-gdpr-consent-database/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/sellinnate/laravel-gdpr-consent-database/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/selli/laravel-gdpr-consent-database.svg?style=flat-square)](https://packagist.org/packages/selli/laravel-gdpr-consent-database)
 
-A comprehensive Laravel package for managing GDPR consent in your applications. This package provides a complete solution for tracking user consents, managing consent types, and ensuring GDPR compliance.
+A comprehensive Laravel package for managing GDPR consent in your applications. This package provides a complete solution for tracking user consents, managing consent types, versioning, expiration, guest consents, an **immutable audit trail** and **erasure (anonymisation)** — everything you need to build provably GDPR-compliant applications.
+
+> 📚 **Full documentation:** the complete, junior-proof guide lives in the [documentation site](https://sellinnate.github.io/laravel-gdpr-consent-database) (sources under [`docs/`](docs)). This README is a quick reference.
+
+### Enterprise features
+
+- **Typed, versioned consents** with stable slugs — detect exactly who must re-consent after a policy change.
+- **Immutable audit trail** (`consent_audit_logs`) — proof of consent for GDPR Art. 7(1), with policy snapshot.
+- **Expiration & renewal** — time-limited consents and re-consent reminders.
+- **Guest consents** — session/cookie-based tracking for anonymous visitors.
+- **Right to erasure** — `anonymizeConsents()` / `gdpr:anonymize-subject` pseudonymise without losing proof.
+- **Art. 30 record-keeping** — `legal_basis`, `purpose`, `data_controller` per consent type.
+- **Configurable cookie banner** with AJAX accept / reject / save-preferences endpoints.
 
 ## Installation
 

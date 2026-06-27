@@ -48,10 +48,39 @@
       ]
     },
     {
+      "title": "Usage",
+      "icon": "code",
+      "children": [
+        { "title": "Consent Types", "path": "/usage/consent-types", "icon": "list" },
+        { "title": "User Consents", "path": "/usage/user-consents", "icon": "user-check" },
+        { "title": "Versioning", "path": "/usage/versioning", "icon": "git-branch" },
+        { "title": "Expiration & Renewal", "path": "/usage/expiration", "icon": "clock" },
+        { "title": "Guest Consents", "path": "/usage/guest-consents", "icon": "users" },
+        { "title": "Cookie Banner", "path": "/usage/cookie-banner", "icon": "cookie" }
+      ]
+    },
+    {
+      "title": "Compliance",
+      "icon": "shield",
+      "children": [
+        { "title": "GDPR Mapping", "path": "/compliance/gdpr-mapping", "icon": "scale" },
+        { "title": "Audit Trail", "path": "/compliance/audit-trail", "icon": "history" },
+        { "title": "Data Subject Rights", "path": "/compliance/data-subject-rights", "icon": "user-x" }
+      ]
+    },
+    {
       "title": "Configuration",
       "icon": "cog",
       "children": [
         { "title": "Overview", "path": "/configuration/overview", "icon": "sliders" }
+      ]
+    },
+    {
+      "title": "Reference",
+      "icon": "book",
+      "children": [
+        { "title": "Artisan Commands", "path": "/reference/commands", "icon": "terminal" },
+        { "title": "Database Schema", "path": "/reference/database-schema", "icon": "database" }
       ]
     },
     { "title": "GitHub", "path": "https://github.com/sellinnate/laravel-gdpr-consent-database", "icon": "github", "external": true }

@@ -7,26 +7,30 @@ description: "The data model and terminology behind the package."
 
 Understanding three entities is enough to use the package effectively.
 
-## The three tables
+## The four tables
 
 ::: card "consent_types — what users can consent to"
 A catalogue of consent definitions. Each row is a thing a user may agree to: Terms, Marketing, a cookie
-category, etc.
-
-Key columns: `name`, `slug` (stable identifier), `description`, `required`, `active`, `category`
-(`cookie` / `other`), `version`, `validity_months`, `effective_from`, `effective_until`, `metadata`.
+category, etc. Multiple rows can share a `slug` — one per [version](/usage/versioning).
 :::
 
-::: card "user_consents — the actual consent records"
-One row per consent action, attached **polymorphically** to any model via `consentable_type` /
-`consentable_id`. Stores `granted`, `granted_at`, `revoked_at`, `expires_at`, `consent_version` and audit
-fields `ip_address`, `user_agent`, `metadata`.
+::: card "user_consents — the current-state consent records"
+One row per active/superseded consent, attached **polymorphically** to any model via `consentable_type` /
+`consentable_id`. Stores `granted`, `granted_at`, `revoked_at`, `expires_at`, `consent_version` and context
+fields.
 :::
 
 ::: card "guest_consents — anonymous visitors"
 Tracks consent for users who are not logged in, keyed by a `session_id` (the *technical cookie code*). Guest
 consents reuse the same `user_consents` storage through the polymorphic relationship.
 :::
+
+::: card "consent_audit_logs — the immutable proof"
+An append-only trail of every consent action (granted / revoked / renewed / anonymized), capturing the exact
+version and policy shown. This is your GDPR Art. 7(1) evidence. See [Audit Trail](/compliance/audit-trail).
+:::
+
+See the full [Database Schema](/reference/database-schema) for every column.
 
 ## Polymorphic consents
 
@@ -48,14 +52,19 @@ class TeamMember extends Model
 
 ## Versioning (at a glance)
 
-When a policy changes you create a **new version** of a consent type. Existing consents remain tied to the
-version they were granted under, so you can detect exactly who needs to re-consent. See the dedicated
-versioning guide (coming up in the docs) for the full workflow.
+The `slug` is a **stable group key**. When a policy changes you publish a new version (same slug, bumped
+`version`); existing consents stay tied to the version they were granted under, so you can detect exactly who
+needs to re-consent. See [Versioning](/usage/versioning) for the full workflow.
 
 ## Expiration (at a glance)
 
 A consent type can declare `validity_months`. Consents then carry an `expires_at` timestamp and are treated
-as inactive once expired — supporting periodic re-consent requirements.
+as inactive once expired — supporting periodic re-consent. See [Expiration & Renewal](/usage/expiration).
+
+## Auditability (at a glance)
+
+Every action is written to an immutable audit log, capturing the version and policy the subject agreed to —
+your proof of consent. See [Audit Trail](/compliance/audit-trail).
 
 ## Guest vs authenticated
 
