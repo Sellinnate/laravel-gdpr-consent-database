@@ -5,7 +5,9 @@
   "description": "Documentation site for the selli/laravel-gdpr-consent-database Laravel package (built with docmd).",
   "scripts": {
     "docs:dev": "docmd dev",
-    "docs:build": "docmd build"
+    "docs:build": "docmd build",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "repository": {
     "type": "git",
@@ -16,5 +18,8 @@
   "homepage": "https://laravel-gdpr-consent.selli.io",
   "dependencies": {
     "@mgks/docmd": "^0.8.9"
+  },
+  "devDependencies": {
+    "wrangler": "^4.105.0"
   }
 }

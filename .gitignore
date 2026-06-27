@@ -38,3 +38,10 @@ SKILL.md
 # Internal working documents (not part of the published package)
 PLAN.md
 DEVELOPMENT_NOTES.md
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
